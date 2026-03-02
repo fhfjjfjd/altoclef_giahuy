@@ -11,6 +11,8 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 
 public class WorldSurvivalChain extends SingleTaskChain {
 
@@ -18,6 +20,7 @@ public class WorldSurvivalChain extends SingleTaskChain {
     private boolean _wasAvoidingDrowning;
     private boolean _wasStuckInPortal;
     private int _portalStuckTimer;
+    private boolean _wasSneakingAtEdge;
 
     public WorldSurvivalChain(TaskRunner runner) {
         super(runner);
@@ -31,6 +34,9 @@ public class WorldSurvivalChain extends SingleTaskChain {
     @Override
     public float getPriority(AltoClef mod) {
         if (!AltoClef.inGame()) return Float.NEGATIVE_INFINITY;
+
+        // Edge protection - crouch near dangerous drops
+        handleEdgeProtection(mod);
 
         // Drowning
         handleDrowning(mod);
@@ -79,6 +85,32 @@ public class WorldSurvivalChain extends SingleTaskChain {
             mod.getInputControls().release(Input.JUMP);
             //mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.JUMP, false);
         }
+    }
+
+    private void handleEdgeProtection(AltoClef mod) {
+        if (isNearDangerousEdge(mod)) {
+            mod.getInputControls().hold(Input.SNEAK);
+            _wasSneakingAtEdge = true;
+        } else if (_wasSneakingAtEdge) {
+            mod.getInputControls().release(Input.SNEAK);
+            _wasSneakingAtEdge = false;
+        }
+    }
+
+    private boolean isNearDangerousEdge(AltoClef mod) {
+        if (!mod.getPlayer().isOnGround()) return false;
+        BlockPos playerPos = mod.getPlayer().getBlockPos();
+        for (Direction dir : Direction.Type.HORIZONTAL) {
+            BlockPos adjacent = playerPos.offset(dir);
+            int dropDepth = 0;
+            BlockPos check = adjacent;
+            while (dropDepth < 10 && mod.getWorld().getBlockState(check.down()).isAir()) {
+                dropDepth++;
+                check = check.down();
+            }
+            if (dropDepth >= 4) return true;
+        }
+        return false;
     }
 
     private boolean isInLavaOhShit(AltoClef mod) {

@@ -3,52 +3,56 @@ package adris.altoclef.tasks;
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.TaskCatalogue;
-import adris.altoclef.tasks.movement.TimeoutWanderTask;
 import adris.altoclef.tasks.resources.CollectFoodTask;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.trackers.InventoryTracker;
 import adris.altoclef.util.CubeBounds;
+import adris.altoclef.util.Dimension;
+import adris.altoclef.util.SchematicBlockMapper;
 import adris.altoclef.util.Utils;
 import adris.altoclef.util.csharpisbetter.TimerGame;
 import adris.altoclef.util.progresscheck.MovementProgressChecker;
-import baritone.api.BaritoneAPI;
 import baritone.api.schematic.ISchematic;
 import baritone.process.BuilderProcess;
-import net.minecraft.block.BedBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
-import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 
 import java.io.File;
 import java.util.*;
-import java.util.List;
 
 public class SchematicBuildTask extends Task {
+
+    public enum BuildState {
+        BUILDING,
+        SOURCING,
+        RECOVERING
+    }
+
     private boolean finished;
     private BuilderProcess builder;
     private String schematicFileName;
     private BlockPos startPos;
     private int allowedResourceStackCount;
-    private Map<BlockState, Integer> needToSource;
-    private boolean gotBackup;
-    private boolean needBackup;
     private Vec3i schemSize;
     private CubeBounds bounds;
     private Map<BlockState, Integer> missing;
-    private boolean sourced;
-    private boolean pause;
     private boolean addedAvoidance;
-    //private final MovementProgressChecker _progressChecker = new MovementProgressChecker(3);
-    private BlockPos _currentTry = null;
     private boolean clearRunning = false;
     private String name;
     private ISchematic schematic;
+
+    private BuildState buildState = BuildState.BUILDING;
+    private List<BlockState> sourcingBatch;
+    private int sourcingIndex;
+
     private static final int FOOD_UNITS = 80;
     private static final int MIN_FOOD_UNITS = 10;
-    private final TimerGame _clickTimer = new TimerGame(120);
+    private static final int STUCK_TIMEOUT_SECONDS = 120;
+
+    private final TimerGame _clickTimer = new TimerGame(STUCK_TIMEOUT_SECONDS);
     private final MovementProgressChecker _moveChecker = new MovementProgressChecker(4, 0.1, 4, 0.01);
     private Task walkAroundTask;
 
@@ -68,10 +72,6 @@ public class SchematicBuildTask extends Task {
     }
 
     public SchematicBuildTask() {
-        this.needToSource = new HashMap<>();
-        this.gotBackup = false;
-        this.needBackup = false;
-        this.sourced = false;
         this.addedAvoidance = false;
     }
 
@@ -82,87 +82,56 @@ public class SchematicBuildTask extends Task {
         this.startPos = startPos;
     }
 
+    public BuildState getBuildState() {
+        return buildState;
+    }
+
     @Override
     protected void onStart(AltoClef mod) {
         this.finished = false;
+        this.buildState = BuildState.BUILDING;
+        this.sourcingBatch = null;
+        this.sourcingIndex = 0;
 
-        if (isNull(builder)) {
+        if (builder == null) {
             builder = mod.getClientBaritone().getBuilderProcess();
         }
 
-        final File file = new File("schematics/" + schematicFileName);
-        if (!file.exists()) {
-            Debug.logMessage("Could not locate schematic file. Terminating...");
-            this.finished = true;
-            return;
+        if (schematicFileName != null) {
+            final File file = new File("schematics/" + schematicFileName);
+            if (!file.exists()) {
+                Debug.logMessage("Could not locate schematic file. Terminating...");
+                this.finished = true;
+                return;
+            }
         }
 
         builder.clearState();
 
         if (Utils.isNull(this.schematic)) {
-            builder.build(schematicFileName, startPos, true); //TODO: I think there should be a state queue in baritone
+            builder.build(schematicFileName, startPos, true);
         } else {
             builder.build(this.name, this.schematic, startPos);
         }
 
-        if (isNull(schemSize)) {
+        if (schemSize == null) {
             this.schemSize = builder.getSchemSize();
         }
 
-        if (!isNull(schemSize) && builder.isFromAltoclef() && !this.addedAvoidance) {
-            this.bounds = new CubeBounds(mod.getPlayer().getBlockPos(), this.schemSize.getX(), this.schemSize.getY(), this.schemSize.getZ());
+        if (schemSize != null && builder.isFromAltoclef() && !this.addedAvoidance) {
+            this.bounds = new CubeBounds(
+                    mod.getPlayer().getBlockPos(),
+                    this.schemSize.getX(), this.schemSize.getY(), this.schemSize.getZ(),
+                    mod.getCurrentDimension()
+            );
             this.addedAvoidance = true;
             mod.addToAvoidanceFile(this.bounds);
             mod.reloadAvoidanceFile();
             mod.unsetAvoidanceOf(this.bounds);
         }
-        this.pause = false;
 
         _moveChecker.reset();
         _clickTimer.reset();
-    }
-
-    private List<BlockState> getTodoList(final AltoClef mod, final Map<BlockState, Integer> missing) {
-        final InventoryTracker inventory = mod.getInventoryTracker();
-        int finishedStacks = 0;
-        final List<BlockState> listOfFinished = new ArrayList<>();
-
-        for (final BlockState state : missing.keySet()) {
-            final Item item = state.getBlock().asItem();
-            final int count = inventory.getItemCount(item);
-            final int maxCount = item.getMaxCount();
-
-            if (finishedStacks < this.allowedResourceStackCount) {
-                listOfFinished.add(state);
-                if (count >= missing.get(state)) {
-                    finishedStacks++;
-                    listOfFinished.remove(state);
-                } else if (count >= maxCount) {
-                    finishedStacks += Math.ceil(count / maxCount);
-
-                    if (finishedStacks >= this.allowedResourceStackCount) {
-                        listOfFinished.remove(state);
-                    }
-                }
-            }
-        }
-
-        return listOfFinished;
-    }
-
-    private boolean isNull(Object o) {
-        return o == null;
-    }
-
-    private void overrideMissing() {
-        this.missing = builder.getMissing();
-    }
-
-    private Map<BlockState, Integer> getMissing() {
-        if (isNull(this.missing)) {
-            overrideMissing();
-        }
-        return this.missing;
     }
 
     @Override
@@ -170,89 +139,175 @@ public class SchematicBuildTask extends Task {
         if (clearRunning && builder.isActive()) {
             return null;
         }
-
         clearRunning = false;
-        overrideMissing();
-        this.sourced = false;
 
-        if (!isNull(getMissing()) && !getMissing().isEmpty() && (builder.isPaused() || !builder.isFromAltoclef()) || !builder.isActive()) {
-            if (!mod.inAvoidance(this.bounds)) {
-                mod.setAvoidanceOf(this.bounds);
-            }
-            if (mod.getInventoryTracker().totalFoodScore() < MIN_FOOD_UNITS) {
-                return new CollectFoodTask(FOOD_UNITS);
-            }
-            for (final BlockState state : getTodoList(mod, missing)) {
-                return TaskCatalogue.getItemTask(state.getBlock().asItem(), missing.get(state));
-            }
-            this.sourced = true;
+        this.missing = builder.getMissing();
+
+        switch (buildState) {
+            case BUILDING:
+                return tickBuilding(mod);
+            case SOURCING:
+                return tickSourcing(mod);
+            case RECOVERING:
+                return tickRecovering(mod);
+        }
+        return null;
+    }
+
+    private Task tickBuilding(AltoClef mod) {
+        // Unset avoidance so bot can enter build area
+        if (bounds != null) {
+            mod.unsetAvoidanceOf(bounds);
         }
 
-        mod.unsetAvoidanceOf(this.bounds);
+        // Check if we need materials
+        boolean needsMaterials = missing != null && !missing.isEmpty()
+                && (builder.isPaused() || !builder.isFromAltoclef() || !builder.isActive());
 
-        if (this.sourced == true && !builder.isActive()) {
-            if (mod.inAvoidance(this.bounds)) {
-                mod.unsetAvoidanceOf(this.bounds);
-            }
-
-            builder.resume();
-            Debug.logMessage("Resuming build process...");
-            System.out.println("Resuming builder...");
+        if (needsMaterials) {
+            transitionToSourcing(mod);
+            return tickSourcing(mod);
         }
 
+        // Stuck detection
         if (_moveChecker.check(mod)) {
             _clickTimer.reset();
         }
         if (_clickTimer.elapsed()) {
-            if (isNull(walkAroundTask)) {
-                walkAroundTask = new RandomRadiusGoalTask(mod.getPlayer().getBlockPos(), 5d).next(mod.getPlayer().getBlockPos());
-            }
-            Debug.logMessage("Timer elapsed.");
+            transitionToRecovering(mod);
+            return tickRecovering(mod);
         }
-        if (!isNull(walkAroundTask)) {
-            if (!walkAroundTask.isFinished(mod)) {
-                return walkAroundTask;
-            } else {
-                walkAroundTask = null;
-                builder.popStack();
-                _clickTimer.reset();
-                _moveChecker.reset();
-            }
-        }
-
-        /*
-        if (BaritoneAPI.getProvider().getPrimaryBaritone().getBuilderProcess().getApproxPlaceable() != null) {
-            if (BaritoneAPI.getProvider().getPrimaryBaritone().getBuilderProcess().getApproxPlaceable().stream().anyMatch(e ->  e != null && e.getBlock() instanceof BedBlock)) {
-                System.out.println("ALT: true");
-            }
-            BaritoneAPI.getProvider().getPrimaryBaritone().getBuilderProcess().getApproxPlaceable().forEach(e -> {
-                if (Utils.isSet(e) && e.getBlock().asItem().toString() != "air") {
-                    System.out.println(e.getBlock().getName());
-                    System.out.println(e.getBlock().asItem().getName());
-                    System.out.println(e.getBlock().asItem().toString());
-                    System.out.println(e.getBlock().toString());
-                    System.out.println("(((((((((");
-                    System.out.println(e.getBlock().getDefaultState());
-                    System.out.println(")))))))))");
-                    System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-                }
-            });
-        }*/
-        //mod.getInventoryTracker().getItemStackInSlot(mod.getInventoryTracker().getInventorySlotsWithItem(Items.OAK_DOOR).get(0)).getItem().
-        /*
-        missing.forEach((k,e) -> {
-            if (Utils.isSet(k)) {
-                System.out.println(k);
-            }
-        });*/
 
         return null;
+    }
+
+    private void transitionToSourcing(AltoClef mod) {
+        buildState = BuildState.SOURCING;
+        Debug.logMessage("State -> SOURCING");
+
+        // Enable avoidance to protect build area while sourcing
+        if (bounds != null && !mod.inAvoidance(bounds)) {
+            mod.setAvoidanceOf(bounds);
+        }
+
+        // Snapshot the entire batch of needed materials (sourcing hysteresis)
+        sourcingBatch = computeSourcingBatch(mod, missing);
+        sourcingIndex = 0;
+    }
+
+    private Task tickSourcing(AltoClef mod) {
+        // Food check first
+        if (mod.getInventoryTracker().totalFoodScore() < MIN_FOOD_UNITS) {
+            return new CollectFoodTask(FOOD_UNITS);
+        }
+
+        // Refresh missing list to see if we've gathered enough
+        this.missing = builder.getMissing();
+
+        // Work through the sourcing batch
+        while (sourcingIndex < sourcingBatch.size()) {
+            BlockState state = sourcingBatch.get(sourcingIndex);
+            // Check if we still need this block type
+            if (missing != null && missing.containsKey(state)) {
+                Item item = SchematicBlockMapper.getObtainableItem(state);
+                if (item == null) {
+                    // Unobtainable block (piston_head, fire, etc.), skip
+                    sourcingIndex++;
+                    continue;
+                }
+                int have = mod.getInventoryTracker().getItemCount(item);
+                int need = missing.get(state);
+                if (have < need) {
+                    return TaskCatalogue.getItemTask(item, need);
+                }
+            }
+            // Already have enough of this type, move to next
+            sourcingIndex++;
+        }
+
+        // All materials sourced, transition back to building
+        transitionToBuilding(mod);
+        return null;
+    }
+
+    private void transitionToBuilding(AltoClef mod) {
+        buildState = BuildState.BUILDING;
+        Debug.logMessage("State -> BUILDING (all materials sourced)");
+
+        // Disable avoidance so bot can enter build area
+        if (bounds != null) {
+            mod.unsetAvoidanceOf(bounds);
+        }
+
+        // Resume builder
+        if (builder.isPaused()) {
+            builder.resume();
+        }
+
+        sourcingBatch = null;
+        sourcingIndex = 0;
+        _moveChecker.reset();
+        _clickTimer.reset();
+    }
+
+    private void transitionToRecovering(AltoClef mod) {
+        buildState = BuildState.RECOVERING;
+        Debug.logMessage("State -> RECOVERING (stuck detected)");
+        walkAroundTask = new RandomRadiusGoalTask(mod.getPlayer().getBlockPos(), 5d)
+                .next(mod.getPlayer().getBlockPos());
+    }
+
+    private Task tickRecovering(AltoClef mod) {
+        if (walkAroundTask != null && !walkAroundTask.isFinished(mod)) {
+            return walkAroundTask;
+        }
+
+        // Recovery complete, go back to building
+        walkAroundTask = null;
+        builder.popStack();
+        buildState = BuildState.BUILDING;
+        Debug.logMessage("State -> BUILDING (recovery complete)");
+        _clickTimer.reset();
+        _moveChecker.reset();
+        return null;
+    }
+
+    /**
+     * Compute the batch of block types to collect, respecting allowedResourceStackCount.
+     * This is the "sourcing hysteresis" - we collect ALL needed types before returning to building.
+     */
+    private List<BlockState> computeSourcingBatch(AltoClef mod, Map<BlockState, Integer> missing) {
+        final InventoryTracker inventory = mod.getInventoryTracker();
+        int finishedStacks = 0;
+        final List<BlockState> batch = new ArrayList<>();
+
+        for (final BlockState state : missing.keySet()) {
+            if (finishedStacks >= this.allowedResourceStackCount) break;
+
+            final Item item = SchematicBlockMapper.getObtainableItem(state);
+            if (item == null) continue; // skip unobtainable blocks
+            final int count = inventory.getItemCount(item);
+            final int maxCount = item.getMaxCount();
+            final int needed = missing.get(state);
+
+            if (count >= needed) {
+                finishedStacks++;
+            } else if (count >= maxCount) {
+                finishedStacks += (int) Math.ceil((double) count / maxCount);
+                if (finishedStacks < this.allowedResourceStackCount) {
+                    batch.add(state);
+                }
+            } else {
+                batch.add(state);
+            }
+        }
+
+        return batch;
     }
 
     @Override
     protected void onStop(AltoClef mod, Task interruptTask) {
         builder.pause();
-        this.pause = true;
     }
 
     @Override
@@ -262,12 +317,12 @@ public class SchematicBuildTask extends Task {
 
     @Override
     protected String toDebugString() {
-        return "SchematicBuilderTask";
+        return "SchematicBuilderTask[" + buildState + "]";
     }
 
     @Override
     public boolean isFinished(AltoClef mod) {
-        if (!isNull(builder) && builder.isFromAltoclefFinished() || this.finished == true) {
+        if ((builder != null && builder.isFromAltoclefFinished()) || this.finished) {
             mod.loadAvoidanceFile();
             return true;
         }

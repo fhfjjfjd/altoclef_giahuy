@@ -2,6 +2,7 @@ package adris.altoclef.util.filestream;
 
 import adris.altoclef.Debug;
 import adris.altoclef.util.CubeBounds;
+import adris.altoclef.util.Dimension;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 
@@ -47,7 +48,13 @@ public class AvoidanceFile {
                     final List<Integer> highPointIntList = Arrays.stream(highPointStrArr)
                             .map(e -> Integer.parseInt(e)).collect(Collectors.toList());
 
+                    // Parse dimension (backward compatible: default to OVERWORLD)
+                    final Dimension dim = regionStrArr.length >= 3
+                            ? Dimension.valueOf(regionStrArr[2].trim())
+                            : Dimension.OVERWORLD;
+
                     final Predicate<BlockPos> pred = (BlockPos e) ->
+                        Dimension.current() == dim &&
                         lowPointIntList.get(0) <= e.getX() &&
                         lowPointIntList.get(1) <= e.getY() &&
                         lowPointIntList.get(2) <= e.getZ() &&
@@ -126,12 +133,18 @@ public class AvoidanceFile {
                     final List<Integer> highPointIntList = Arrays.stream(highPointStrArr)
                             .map(e -> Integer.parseInt(e)).collect(Collectors.toList());
 
+                    // Parse dimension (backward compatible: default to OVERWORLD)
+                    final Dimension fileDim = regionStrArr.length >= 3
+                            ? Dimension.valueOf(regionStrArr[2].trim())
+                            : Dimension.OVERWORLD;
+
                     if (lowPointIntList.get(0) == low.getX() &&
                         lowPointIntList.get(1) == low.getY() &&
                         lowPointIntList.get(2) == low.getZ() &&
                         high.getX() == highPointIntList.get(0) &&
                         high.getY() == highPointIntList.get(1) &&
-                        high.getZ() == highPointIntList.get(2)) {
+                        high.getZ() == highPointIntList.get(2) &&
+                        fileDim == bounds.getDimension()) {
                         sc.close();
 
                         removeLine(line, loadFrom);
@@ -155,7 +168,7 @@ public class AvoidanceFile {
         final BlockPos low = bounds.getLow();
         final BlockPos high = bounds.getHigh();
 
-        result.append(low.getX() + "," + low.getY() + "," + low.getZ() + ":" + high.getX() + "," + high.getY() + "," + high.getZ() + "\n");
+        result.append(low.getX() + "," + low.getY() + "," + low.getZ() + ":" + high.getX() + "," + high.getY() + "," + high.getZ() + ":" + bounds.getDimension().name() + "\n");
 
         try {
             OutputStream os = new FileOutputStream(AVOIDANCE_PATH, true);

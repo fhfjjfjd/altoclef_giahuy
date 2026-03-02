@@ -1,13 +1,17 @@
 package adris.altoclef.ui;
 
 import adris.altoclef.AltoClef;
+import adris.altoclef.tasks.SchematicBuildTask;
 import adris.altoclef.tasksystem.Task;
+import baritone.process.BuilderProcess;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class CommandStatusOverlay {
 
@@ -18,14 +22,19 @@ public class CommandStatusOverlay {
                 tasks = mod.getTaskRunner().getCurrentTaskChain().getTasks();
             }
 
+            TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
             int color = 0xFFFFFFFF;
-            drawTaskChain(MinecraftClient.getInstance().textRenderer, matrixstack, 0, 0, color, 10, tasks);
+            float dy = drawTaskChain(renderer, matrixstack, 0, 0, color, 10, tasks);
+
+            // Draw build info below task chain
+            dy = drawBuildInfo(renderer, matrixstack, 0, dy + 4, mod);
         }
     }
 
-    private void drawTaskChain(TextRenderer renderer, MatrixStack stack, float dx, float dy, int color, int maxLines, List<Task> tasks) {
+    private float drawTaskChain(TextRenderer renderer, MatrixStack stack, float dx, float dy, int color, int maxLines, List<Task> tasks) {
         if (tasks.size() == 0) {
             renderer.draw(stack, " (no task running) ", dx, dy, color);
+            dy += renderer.fontHeight + 2;
         } else {
             float fontHeight = renderer.fontHeight;
 
@@ -49,7 +58,76 @@ public class CommandStatusOverlay {
                     dy += fontHeight + 2;
                 }
             }
-
         }
+        return dy;
+    }
+
+    private float drawBuildInfo(TextRenderer renderer, MatrixStack stack, float dx, float dy, AltoClef mod) {
+        try {
+            BuilderProcess builder = mod.getClientBaritone().getBuilderProcess();
+            if (!builder.isActive()) {
+                return dy;
+            }
+
+            int headerColor = 0xFF55FFFF;  // cyan
+            int labelColor = 0xFFFFFF55;    // yellow
+            int valueColor = 0xFFAAFFAA;    // light green
+            int warnColor = 0xFFFF5555;     // red
+            float fontHeight = renderer.fontHeight;
+
+            // Builder status - show state machine state if available
+            String status;
+            int statusColor;
+            SchematicBuildTask buildTask = findSchematicBuildTask(mod);
+            if (buildTask != null) {
+                SchematicBuildTask.BuildState state = buildTask.getBuildState();
+                status = state.name();
+                switch (state) {
+                    case BUILDING:  statusColor = valueColor; break;
+                    case SOURCING:  statusColor = labelColor; break;
+                    case RECOVERING: statusColor = warnColor; break;
+                    default: statusColor = valueColor;
+                }
+            } else {
+                status = builder.isPaused() ? "PAUSED" : "BUILDING";
+                statusColor = builder.isPaused() ? warnColor : valueColor;
+            }
+            renderer.draw(stack, "[Builder: " + status + "]", dx, dy, statusColor);
+            dy += fontHeight + 2;
+
+            // Missing blocks
+            Map<BlockState, Integer> missing = builder.getMissing();
+            if (missing != null && !missing.isEmpty()) {
+                renderer.draw(stack, "Missing blocks:", dx, dy, labelColor);
+                dy += fontHeight + 2;
+
+                int count = 0;
+                for (Map.Entry<BlockState, Integer> entry : missing.entrySet()) {
+                    if (count >= 8) {
+                        renderer.draw(stack, "  ... +" + (missing.size() - 8) + " more", dx, dy, valueColor);
+                        dy += fontHeight + 2;
+                        break;
+                    }
+                    String blockName = entry.getKey().getBlock().getName().getString();
+                    renderer.draw(stack, "  " + blockName + " x" + entry.getValue(), dx, dy, valueColor);
+                    dy += fontHeight + 2;
+                    count++;
+                }
+            }
+        } catch (Exception e) {
+            // Ignore render errors
+        }
+        return dy;
+    }
+
+    private SchematicBuildTask findSchematicBuildTask(AltoClef mod) {
+        if (mod.getTaskRunner().getCurrentTaskChain() == null) return null;
+        List<Task> tasks = mod.getTaskRunner().getCurrentTaskChain().getTasks();
+        for (Task task : tasks) {
+            if (task instanceof SchematicBuildTask) {
+                return (SchematicBuildTask) task;
+            }
+        }
+        return null;
     }
 }
