@@ -1,52 +1,106 @@
-# altoclef
-Plays block game.
+# AltoClef Huy Edition
 
-Powered by Baritone.
+Minecraft bot mod tự động xây dựng, sinh tồn và hoàn thành nhiệm vụ.
 
-A client side bot that can accomplish any Minecraft task that is relatively simple and can be split into smaller tasks. "Relatively Simple" is a vague term, so check the list of current capabilities to see examples.
+Powered by Baritone. Fork bởi **Gia Huy**.
 
-Became [the first bot to beat Minecraft fully autonomously](https://youtu.be/baAa6s8tahA) on May 24, 2021.
+> Fabric 1.17.1 | Java 17 | Gradle 7.3.3
 
-**Join the [Discord Server](https://discord.gg/fUUEHeNmXb)** for discussions/updates/goofs & gaffs
+---
 
-## How it works
+## Tính năng mới (so với bản gốc)
 
-Take a look at this [Guide from the wiki](https://github.com/gaucho-matrero/altoclef/wiki/1:-Documentation:-Big-Picture) or this [Video explanation](https://youtu.be/q5OmcinQ2ck?t=387)
+- **State Machine Builder** — `SchematicBuildTask` dùng state machine (`BUILDING` → `SOURCING` → `RECOVERING`) thay vì boolean flags rối rắm
+- **Sourcing Hysteresis** — Bot thu thập TẤT CẢ vật liệu cần thiết trước khi quay lại xây, không còn loop collect 1 block → đặt → collect lại
+- **Dimension-Aware Avoidance** — Hệ thống avoidance nhận biết chiều không gian (Overworld/Nether/End), không block breaking sai dimension
+- **Fall Damage Prevention** — Bot tự động crouch khi đứng gần vực ≥ 4 block
+- **Unsupported Block Mapper** — Tự động map block lạ trong schematic (water, redstone_wire, crops...) sang item lấy được, skip block không thể lấy
+- **Global Stuck Watchdog** — Nếu bot không di chuyển trong 30 giây, tự động reset task chain
+- **HUD Overlay** — Hiển thị trạng thái builder (BUILDING/SOURCING/RECOVERING) + danh sách block còn thiếu
+- **`@info` Command** — Xem lệnh, file schematic, trạng thái builder và task chain
 
-## Current capabilities, Examples:
-- Obtain 400+ Items from a fresh survival world, like diamond armor, cake, and nether brick stairs
-- Dodge mob projectiles and force field mobs away while accomplishing arbitrary tasks
-- Collect + smelt food from animals, hay, & crops
-- Receive commands from chat whispers via /msg. Whitelist + Blacklist configurable (hereby dubbed the Butler System). Here's a [Butler system demo video](https://drive.google.com/file/d/1axVYYMJ5VjmVHaWlCifFHTwiXlFssOUc/view?usp=sharing)
-- Simple config file that can be reloaded via command (check .minecraft directory)
-- Beat the entire game on its own (no user input.)
-- Print the entire bee movie script with signs in a straight line, automatically collecting signs + bridging materials along the way.
-- Become the terminator: Run away from players while unarmed, gather diamond gear in secret, then return and wreak havoc.
+---
 
+## Cài đặt
 
-## Download
+### Yêu cầu
+- Minecraft 1.17.1 (Fabric)
+- Java 17+
+- Fabric Loader 0.11.6+
 
-**Note:** After installing, please move/delete your old baritone configurations if you have any. Preexisting baritone configurations will interfere with altoclef and introduce bugs. This will be fixed in the future.
+### Cách cài
+1. Tải file JAR từ [Releases](https://github.com/fhfjjfjddg/altoclef_huy/releases) hoặc build từ source
+2. Copy JAR vào thư mục `.minecraft/mods/`
+3. Chạy Minecraft với Fabric Loader
 
-### Nightly Release (Recommended) (has the latest bug fixes)
+### Build từ source
+```bash
+git clone https://github.com/fhfjjfjddg/altoclef_huy.git
+cd altoclef_huy
+chmod +x gradlew
+./gradlew build
+# JAR output: build/libs/altoclef-*.jar
+```
 
-Start by downloading [the Latest Long Term Release](https://github.com/gaucho-matrero/altoclef/releases), then [Download the Nightly](https://nightly.link/gaucho-matrero/altoclef/workflows/gradle/main/Artifacts.zip) & replace `altoclef-1.0-SNAPSHOT.jar`.
+---
 
-If the Nightly Link doesn't work, check the latest [Build Action](https://github.com/gaucho-matrero/altoclef/actions) that succeeded and download `Artifacts.zip` (you must be signed into GitHub). Replace your existing `altoclef-1.0-SNAPSHOT.jar` with the one found in `Artifacts.zip`
+## Cách sử dụng
 
-### Long Term Release
+| Lệnh | Mô tả |
+|-------|--------|
+| `@build <file.schem>` | Bắt đầu xây từ file schematic |
+| `@info` | Xem trạng thái bot, lệnh khả dụng, file schematic |
+| `@stop` | Dừng task hiện tại |
+| `@coords` | Hiển thị tọa độ và dimension hiện tại |
 
-[Check releases](https://github.com/gaucho-matrero/altoclef/releases). Note you will need to copy over both jar files for the mod to work.
+### Schematic
+- Đặt file `.schem` vào thư mục `schematics/` trong `.minecraft/`
+- Bot sẽ tự động thu thập vật liệu và xây dựng
 
-### Versions
+---
 
-This is a **fabric only** mod, currently only available for **Minecraft 1.17**.
+## Tính năng gốc
 
-For older MC versions, try [multiconnect](https://www.curseforge.com/minecraft/mc-mods/multiconnect) (NOTE: multiconnect is untested and not affiliated with altoclef, use at your own risk!)
+- Thu thập 400+ loại item từ world survival mới
+- Né đạn mob, force field mob
+- Thu thập + nấu thức ăn từ động vật, cây trồng
+- Nhận lệnh qua chat whisper (Butler System)
+- Tự động đánh Minecraft từ đầu đến cuối
+- File config có thể reload qua lệnh
 
+---
 
-## [Usage Guide](usage.md)
+## Cấu trúc dự án
 
-## [TODO's/Future Features](todos.md)
+```
+src/main/java/adris/altoclef/
+├── AltoClef.java                 # Main mod class
+├── TaskCatalogue.java            # Registry item → task
+├── tasks/
+│   ├── SchematicBuildTask.java   # ⭐ Core builder (state machine)
+│   └── RandomRadiusGoalTask.java # Recovery movement
+├── tasksystem/
+│   ├── TaskRunner.java           # ⭐ Tick loop + watchdog
+│   └── TaskChain.java            # Task chain system
+├── chains/
+│   ├── WorldSurvivalChain.java   # ⭐ Survival + fall protection
+│   └── MLGBucketFallChain.java   # MLG water bucket
+├── ui/
+│   └── CommandStatusOverlay.java # ⭐ HUD overlay
+└── util/
+    ├── Dimension.java            # Enum + current()
+    ├── CubeBounds.java           # Bounding box + dimension
+    └── SchematicBlockMapper.java # ⭐ Block → Item mapper
+```
 
-## [Development Guide](develop.md)
+---
+
+## Credit
+
+- [Alto Clef gốc](https://github.com/gaucho-matrero/altoclef) bởi gaucho-matrero
+- [Fork Meloweh](https://github.com/Meloweh/altoclef) — schematic builder
+- **Gia Huy** — state machine, dimension-aware, fall protection, block mapper, watchdog
+
+## License
+
+CC0-1.0
