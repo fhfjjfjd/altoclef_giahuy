@@ -52,6 +52,7 @@ dependencies {
     }*/
 
     modImplementation 'baritone-api-fabric:baritone-unoptimized-fabric:1.7.0-meloweh-beta.1'
+    include 'baritone-api-fabric:baritone-unoptimized-fabric:1.7.0-meloweh-beta.1'
     //modImplementation 'baritone-api-fabric:baritone-api-fabric:1.6.3'
     //implementation files('baritone-plus/build/libs/baritone-unoptimized-fabric-1.6.3.jar')
 }
