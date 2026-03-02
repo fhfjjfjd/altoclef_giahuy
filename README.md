@@ -37,10 +37,19 @@ Powered by Baritone. Forked by **Gia Huy**.
 ```bash
 git clone https://github.com/fhfjjfjddg/altoclef_huy.git
 cd altoclef_huy
-chmod +x gradlew
-./gradlew build
-# JAR output: build/libs/altoclef-*.jar
 ```
+
+**Linux / macOS / Termux:**
+```bash
+./build.sh
+```
+
+**Windows:**
+```
+build.bat
+```
+
+The JAR will be in `build/libs/`.
 
 ---
 
