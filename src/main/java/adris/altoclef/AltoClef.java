@@ -13,6 +13,7 @@ import adris.altoclef.trackers.*;
 import adris.altoclef.ui.CommandStatusOverlay;
 import adris.altoclef.ui.MessagePriority;
 import adris.altoclef.ui.MessageSender;
+import adris.altoclef.util.AutoToolEquip;
 import adris.altoclef.util.CubeBounds;
 import adris.altoclef.util.Dimension;
 import adris.altoclef.util.InputControls;
@@ -173,6 +174,9 @@ public class AltoClef implements ModInitializer {
 
         _trackerManager.tick();
         _taskRunner.tick();
+
+        // Auto-equip best tool when mining
+        AutoToolEquip.tick(this);
 
         _butler.tick();
         _messageSender.tick();

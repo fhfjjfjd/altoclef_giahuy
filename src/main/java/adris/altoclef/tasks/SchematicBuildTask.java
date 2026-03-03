@@ -8,12 +8,15 @@ import adris.altoclef.tasksystem.Task;
 import adris.altoclef.trackers.InventoryTracker;
 import adris.altoclef.util.CubeBounds;
 import adris.altoclef.util.Dimension;
+import adris.altoclef.util.RotatedSchematic;
 import adris.altoclef.util.SchematicBlockMapper;
 import adris.altoclef.util.Utils;
 import adris.altoclef.util.csharpisbetter.TimerGame;
 import adris.altoclef.util.progresscheck.MovementProgressChecker;
 import baritone.api.schematic.ISchematic;
+import baritone.api.schematic.format.ISchematicFormat;
 import baritone.process.BuilderProcess;
+import baritone.utils.schematic.SchematicSystem;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
@@ -21,6 +24,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.*;
 
 public class SchematicBuildTask extends Task {
@@ -36,6 +40,7 @@ public class SchematicBuildTask extends Task {
     private String schematicFileName;
     private BlockPos startPos;
     private int allowedResourceStackCount;
+    private int rotationSteps = 0; // 0=none, 1=90°CW, 2=180°, 3=270°CW
     private Vec3i schemSize;
     private CubeBounds bounds;
     private Map<BlockState, Integer> missing;
@@ -69,6 +74,16 @@ public class SchematicBuildTask extends Task {
         this.schematicFileName = schematicFileName;
         this.startPos = startPos;
         this.allowedResourceStackCount = allowedResourceStackCount;
+    }
+
+    public SchematicBuildTask(final String schematicFileName, final int rotationSteps) {
+        this(schematicFileName);
+        this.rotationSteps = rotationSteps;
+    }
+
+    public SchematicBuildTask(final String schematicFileName, final BlockPos startPos, final int allowedResourceStackCount, final int rotationSteps) {
+        this(schematicFileName, startPos, allowedResourceStackCount);
+        this.rotationSteps = rotationSteps;
     }
 
     public SchematicBuildTask() {
@@ -109,9 +124,23 @@ public class SchematicBuildTask extends Task {
         builder.clearState();
 
         if (Utils.isNull(this.schematic)) {
-            builder.build(schematicFileName, startPos, true);
+            if (rotationSteps != 0) {
+                // Load schematic manually, apply rotation, then build
+                ISchematic loaded = loadSchematicFromFile(schematicFileName);
+                if (loaded == null) {
+                    Debug.logMessage("Failed to load schematic for rotation. Terminating...");
+                    this.finished = true;
+                    return;
+                }
+                ISchematic rotated = RotatedSchematic.rotate(loaded, rotationSteps);
+                builder.build(schematicFileName, rotated, startPos, true);
+                Debug.logMessage("Building with " + (rotationSteps * 90) + "° rotation");
+            } else {
+                builder.build(schematicFileName, startPos, true);
+            }
         } else {
-            builder.build(this.name, this.schematic, startPos);
+            ISchematic toUse = (rotationSteps != 0) ? RotatedSchematic.rotate(this.schematic, rotationSteps) : this.schematic;
+            builder.build(this.name, toUse, startPos);
         }
 
         if (schemSize == null) {
@@ -327,5 +356,20 @@ public class SchematicBuildTask extends Task {
             return true;
         }
         return false;
+    }
+
+    private ISchematic loadSchematicFromFile(String fileName) {
+        try {
+            File file = new File("schematics/" + fileName);
+            Optional<ISchematicFormat> format = SchematicSystem.INSTANCE.getByFile(file);
+            if (!format.isPresent()) {
+                Debug.logMessage("Unknown schematic format: " + fileName);
+                return null;
+            }
+            return format.get().parse(new FileInputStream(file));
+        } catch (Exception e) {
+            Debug.logMessage("Error loading schematic: " + e.getMessage());
+            return null;
+        }
     }
 }

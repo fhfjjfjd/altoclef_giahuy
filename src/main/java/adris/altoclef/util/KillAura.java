@@ -5,8 +5,6 @@ import adris.altoclef.util.csharpisbetter.TimerGame;
 import adris.altoclef.util.helpers.StlHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.projectile.FireballEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,18 +94,13 @@ public class KillAura {
     private void attack(AltoClef mod, Entity entity) {
         attack(mod, entity, false);
     }
-    private void attack(AltoClef mod, Entity entity, boolean equipSword) {
+    private void attack(AltoClef mod, Entity entity, boolean equipWeapon) {
         if (entity == null) return;
         if (Double.isInfinite(_forceFieldRange) || entity.squaredDistanceTo(mod.getPlayer()) < _forceFieldRange * _forceFieldRange) {
             boolean canAttack;
-            if (equipSword) {
-                // Equip sword, or if we don't have one just use our fists.
-                Item[] swordsTopPriorityFirst = new Item[] {Items.NETHERITE_SWORD, Items.DIAMOND_SWORD, Items.IRON_SWORD, Items.STONE_SWORD, Items.WOODEN_SWORD};
-                if (mod.getInventoryTracker().hasItem(swordsTopPriorityFirst)) {
-                    canAttack = mod.getSlotHandler().forceEquipItem(swordsTopPriorityFirst);
-                } else {
-                    canAttack = mod.getSlotHandler().forceDeequipHitTool();
-                }
+            if (equipWeapon) {
+                // Equip best weapon (swords + axes, ranked by damage)
+                canAttack = AutoToolEquip.equipBestWeapon(mod);
             } else {
                 // Equip non-tool
                 canAttack = mod.getSlotHandler().forceDeequipHitTool();
