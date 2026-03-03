@@ -11,9 +11,11 @@ Powered by Baritone. Forked by **Gia Huy**.
 ## New Features (compared to original)
 
 - **State Machine Builder** — `SchematicBuildTask` uses a state machine (`BUILDING` → `SOURCING` → `RECOVERING`) instead of messy boolean flags
+- **Schematic Rotation** — Rotate schematics 90°/180°/270° before building with `@build file.schem 90`
 - **Sourcing Hysteresis** — Bot collects ALL required materials before returning to build, no more collect 1 block → place → collect again loop
 - **Dimension-Aware Avoidance** — Avoidance system recognizes dimensions (Overworld/Nether/End), won't block breaking in the wrong dimension
 - **Fall Damage Prevention** — Bot automatically crouches when standing near edges with ≥ 4 block drops
+- **Auto-Equip Tool/Weapon** — Automatically equips the best tool when mining and the best weapon (swords + axes) when fighting
 - **Unsupported Block Mapper** — Automatically maps unusual schematic blocks (water, redstone_wire, crops...) to obtainable items, skips unobtainable blocks
 - **Global Stuck Watchdog** — If the bot doesn't move for 30 seconds, automatically resets the task chain
 - **HUD Overlay** — Displays builder state (BUILDING/SOURCING/RECOVERING) + list of missing blocks
@@ -29,14 +31,14 @@ Powered by Baritone. Forked by **Gia Huy**.
 - Fabric Loader 0.11.6+
 
 ### How to install
-1. Download the JAR from [Releases](https://github.com/fhfjjfjddg/altoclef_huy/releases) or build from source
+1. Download the JAR from [Releases](https://github.com/fhfjjfjd/altoclef_giahuy/releases) or build from source
 2. Copy the JAR into `.minecraft/mods/`
 3. Launch Minecraft with Fabric Loader
 
 ### Build from source
 ```bash
-git clone https://github.com/fhfjjfjddg/altoclef_huy.git
-cd altoclef_huy
+git clone https://github.com/fhfjjfjd/altoclef_giahuy.git
+cd altoclef_giahuy
 ```
 
 **Linux / macOS / Termux:**
@@ -58,6 +60,7 @@ The JAR will be in `build/libs/`.
 | Command | Description |
 |---------|-------------|
 | `@build <file.schem>` | Start building from a schematic file |
+| `@build <file.schem> <rotation>` | Build with rotation (0, 90, 180, 270 degrees) |
 | `@info` | View bot status, available commands, schematic files |
 | `@stop` | Stop the current task |
 | `@coords` | Display current coordinates and dimension |
@@ -65,6 +68,11 @@ The JAR will be in `build/libs/`.
 ### Schematics
 - Place `.schem` files in the `schematics/` folder inside `.minecraft/`
 - The bot will automatically gather materials and build
+- Rotation is clockwise around the Y axis (looking down)
+
+### Auto-Equip
+- When mining, the bot automatically equips the best tool (pickaxe/axe/shovel) for the target block
+- When fighting, the bot equips the best weapon available (netherite > diamond > iron, considers both swords and axes)
 
 ---
 
@@ -86,7 +94,7 @@ src/main/java/adris/altoclef/
 ├── AltoClef.java                 # Main mod class
 ├── TaskCatalogue.java            # Item → task registry
 ├── tasks/
-│   ├── SchematicBuildTask.java   # ⭐ Core builder (state machine)
+│   ├── SchematicBuildTask.java   # ⭐ Core builder (state machine + rotation)
 │   └── RandomRadiusGoalTask.java # Recovery movement
 ├── tasksystem/
 │   ├── TaskRunner.java           # ⭐ Tick loop + watchdog
@@ -97,6 +105,8 @@ src/main/java/adris/altoclef/
 ├── ui/
 │   └── CommandStatusOverlay.java # ⭐ HUD overlay
 └── util/
+    ├── AutoToolEquip.java        # ⭐ Auto-equip best tool/weapon
+    ├── RotatedSchematic.java     # ⭐ Schematic rotation wrapper
     ├── Dimension.java            # Enum + current()
     ├── CubeBounds.java           # Bounding box + dimension
     └── SchematicBlockMapper.java # ⭐ Block → Item mapper
@@ -108,7 +118,7 @@ src/main/java/adris/altoclef/
 
 - [Original Alto Clef](https://github.com/gaucho-matrero/altoclef) by gaucho-matrero
 - [Meloweh's Fork](https://github.com/Meloweh/altoclef) — schematic builder
-- **Gia Huy** — state machine, dimension-aware avoidance, fall protection, block mapper, watchdog
+- **Gia Huy** — state machine, rotation, auto-equip, dimension-aware avoidance, fall protection, block mapper, watchdog
 
 ## License
 
