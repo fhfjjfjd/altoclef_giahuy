@@ -3,6 +3,7 @@ package adris.altoclef.ui;
 import adris.altoclef.AltoClef;
 import adris.altoclef.tasks.SchematicBuildTask;
 import adris.altoclef.tasksystem.Task;
+import adris.altoclef.util.CombatManager;
 import baritone.process.BuilderProcess;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
@@ -26,7 +27,10 @@ public class CommandStatusOverlay {
             int color = 0xFFFFFFFF;
             float dy = drawTaskChain(renderer, matrixstack, 0, 0, color, 10, tasks);
 
-            // Draw build info below task chain
+            // Draw combat info below task chain
+            dy = drawCombatInfo(renderer, matrixstack, 0, dy + 4, mod);
+
+            // Draw build info below combat info
             dy = drawBuildInfo(renderer, matrixstack, 0, dy + 4, mod);
         }
     }
@@ -58,6 +62,36 @@ public class CommandStatusOverlay {
                     dy += fontHeight + 2;
                 }
             }
+        }
+        return dy;
+    }
+
+    private float drawCombatInfo(TextRenderer renderer, MatrixStack stack, float dx, float dy, AltoClef mod) {
+        try {
+            CombatManager combat = mod.getCombatManager();
+            CombatManager.CombatState state = combat.getState();
+            if (state == CombatManager.CombatState.IDLE) return dy;
+
+            int stateColor;
+            switch (state) {
+                case ENGAGING:  stateColor = 0xFFFF5555; break;  // red
+                case BLOCKING:  stateColor = 0xFF5555FF; break;  // blue
+                case RETREATING: stateColor = 0xFFFFAA00; break; // orange
+                default: stateColor = 0xFFFFFFFF;
+            }
+
+            String info = "[Combat: " + state.name() + "]";
+            if (combat.isBlocking()) info += " \u2694 SHIELD";
+            renderer.draw(stack, info, dx, dy, stateColor);
+            dy += renderer.fontHeight + 2;
+
+            // Show health bar
+            float health = mod.getPlayer().getHealth();
+            int healthColor = health > 10 ? 0xFFAAFFAA : (health > 6 ? 0xFFFFFF55 : 0xFFFF5555);
+            renderer.draw(stack, String.format("  HP: %.0f/20", health), dx, dy, healthColor);
+            dy += renderer.fontHeight + 2;
+        } catch (Exception e) {
+            // Ignore render errors
         }
         return dy;
     }

@@ -31,7 +31,8 @@ public class AltoClefCommands {
                 new RoundtripCommand(),
                 new BuildCommand(),
                 new FillTargetChestCommand(),
-                new InfoCommand()
+                new InfoCommand(),
+                new AutoFarmCommand()
                 //new TestMoveInventoryCommand(),
                 //    new TestSwapInventoryCommand()
         );

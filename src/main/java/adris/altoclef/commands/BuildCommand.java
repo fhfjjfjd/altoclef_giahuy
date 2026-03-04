@@ -7,7 +7,7 @@ import adris.altoclef.tasks.SchematicBuildTask;
 
 public class BuildCommand extends Command {
     public BuildCommand() throws CommandException {
-        super("build", "Build a schematic. Usage: @build <file> [rotation: 0/90/180/270]",
+        super("build", "Build schematic with rotation. Usage: @build <file.schem> [0/90/180/270]",
                 new Arg(String.class, "filename", "", 0),
                 new Arg(Integer.class, "rotation", 0, 0));
     }

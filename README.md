@@ -1,6 +1,6 @@
 # AltoClef Huy Edition
 
-A Minecraft bot mod that automatically builds, survives, and completes tasks.
+A Minecraft bot mod that automatically builds, farms, fights, survives, and completes tasks.
 
 Powered by Baritone. Forked by **Gia Huy**.
 
@@ -10,16 +10,33 @@ Powered by Baritone. Forked by **Gia Huy**.
 
 ## New Features (compared to original)
 
+### 🏗️ Building
 - **State Machine Builder** — `SchematicBuildTask` uses a state machine (`BUILDING` → `SOURCING` → `RECOVERING`) instead of messy boolean flags
 - **Schematic Rotation** — Rotate schematics 90°/180°/270° before building with `@build file.schem 90`
-- **Sourcing Hysteresis** — Bot collects ALL required materials before returning to build, no more collect 1 block → place → collect again loop
-- **Dimension-Aware Avoidance** — Avoidance system recognizes dimensions (Overworld/Nether/End), won't block breaking in the wrong dimension
-- **Fall Damage Prevention** — Bot automatically crouches when standing near edges with ≥ 4 block drops
-- **Auto-Equip Tool/Weapon** — Automatically equips the best tool when mining and the best weapon (swords + axes) when fighting
-- **Unsupported Block Mapper** — Automatically maps unusual schematic blocks (water, redstone_wire, crops...) to obtainable items, skips unobtainable blocks
-- **Global Stuck Watchdog** — If the bot doesn't move for 30 seconds, automatically resets the task chain
-- **HUD Overlay** — Displays builder state (BUILDING/SOURCING/RECOVERING) + list of missing blocks
-- **`@info` Command** — View commands, schematic files, builder status and task chain
+- **Sourcing Hysteresis** — Bot collects ALL required materials before returning to build
+- **Unsupported Block Mapper** — Maps unusual schematic blocks to obtainable items, skips unobtainable blocks
+
+### 🌾 Farming
+- **Auto-Farm System** — Fully automatic crop farming with `@auto-farm <crop> <count>`
+- Supports 12 crop types: wheat, carrot, potato, beetroot, sugar_cane, melon, pumpkin, cactus, bamboo, sweet_berries, nether_wart, cocoa_beans
+- Auto-harvest mature crops, replant, create farmland, acquire seeds
+
+### ⚔️ Combat
+- **Advanced Combat Manager** — Shield auto-blocking, critical hits, sprint-reset combos, circle strafing
+- **Auto-Equip Weapon** — Automatically equips the best weapon (netherite > diamond > iron, swords + axes ranked by damage)
+- **Smart Retreat** — Bot retreats to heal when HP is critically low
+- **Combat HUD** — Shows combat state (ENGAGING/BLOCKING/RETREATING) + HP bar
+
+### 🛡️ Survival
+- **Fall Damage Prevention** — Auto-crouches near edges with ≥ 4 block drops
+- **Dimension-Aware Avoidance** — Avoidance recognizes dimensions (Overworld/Nether/End)
+- **Auto-Equip Tool** — Automatically equips the best tool when mining
+
+### 🔧 System
+- **Global Stuck Watchdog** — Resets task chain if no movement for 30 seconds
+- **HUD Overlay** — Builder state + missing blocks + combat status + HP
+- **Categorized Help** — `@help` shows commands grouped by category
+- **`@info` Command** — View commands, schematics, farm crops, build status
 
 ---
 
@@ -55,24 +72,74 @@ The JAR will be in `build/libs/`.
 
 ---
 
-## Usage
+## Commands
 
+### Building
 | Command | Description |
 |---------|-------------|
-| `@build <file.schem>` | Start building from a schematic file |
-| `@build <file.schem> <rotation>` | Build with rotation (0, 90, 180, 270 degrees) |
-| `@info` | View bot status, available commands, schematic files |
-| `@stop` | Stop the current task |
-| `@coords` | Display current coordinates and dimension |
+| `@build <file.schem>` | Build a schematic at player position |
+| `@build <file.schem> <90/180/270>` | Build with clockwise rotation |
+| `@autofill <materials...>` | Fill a target chest with specified materials |
 
-### Schematics
+### Farming
+| Command | Description |
+|---------|-------------|
+| `@auto-farm <crop> [count]` | Auto-farm a crop (default: 100) |
+| `@food <count>` | Collect food (hunts animals, harvests crops) |
+
+**Supported crops:**
+| Type | Crops |
+|------|-------|
+| Farmland | `wheat` `carrot` `potato` `beetroot` |
+| Ground | `sugar_cane` `cactus` `bamboo` `sweet_berries` `melon` `pumpkin` |
+| Nether | `nether_wart` |
+| Tree | `cocoa_beans` |
+
+### Navigation
+| Command | Description |
+|---------|-------------|
+| `@goto <x> <y> <z>` | Go to coordinates |
+| `@follow <player>` | Follow a player |
+| `@roundtrip <x> <y> <z>` | Travel to coordinates and back |
+| `@coords` | Show current coordinates and dimension |
+| `@locate_structure <name>` | Find a structure |
+
+### Resources & Combat
+| Command | Description |
+|---------|-------------|
+| `@get <item> [count]` | Obtain any item |
+| `@list` | List all obtainable items |
+| `@give <player> <item> [count]` | Give item to a player |
+| `@punk <player>` | Attack a player |
+| `@gamer` | Auto speedrun (kill Ender Dragon) |
+
+### System
+| Command | Description |
+|---------|-------------|
+| `@help` | Show all commands grouped by category |
+| `@info` | Show commands, schematics, farm crops, build status |
+| `@status` | Show current task status |
+| `@inventory` | Show inventory contents |
+| `@stop` | Stop the current task |
+| `@reload_settings` | Reload settings from file |
+| `@gamma <value>` | Set brightness level |
+
+---
+
+## Schematics
+
 - Place `.schem` files in the `schematics/` folder inside `.minecraft/`
 - The bot will automatically gather materials and build
 - Rotation is clockwise around the Y axis (looking down)
+- The block mapper handles unusual blocks (water, redstone_wire, crops → obtainable items)
 
-### Auto-Equip
-- When mining, the bot automatically equips the best tool (pickaxe/axe/shovel) for the target block
-- When fighting, the bot equips the best weapon available (netherite > diamond > iron, considers both swords and axes)
+---
+
+## Auto-Equip
+
+- **Mining** — Automatically equips the best tool (pickaxe/axe/shovel) for the target block
+- **Combat** — Equips the best weapon available (netherite > diamond > iron, swords + axes ranked by damage)
+- **Shield** — Auto-raises shield between attack cooldowns (if shield in offhand)
 
 ---
 
@@ -95,17 +162,26 @@ src/main/java/adris/altoclef/
 ├── TaskCatalogue.java            # Item → task registry
 ├── tasks/
 │   ├── SchematicBuildTask.java   # ⭐ Core builder (state machine + rotation)
-│   └── RandomRadiusGoalTask.java # Recovery movement
+│   └── resources/
+│       └── AutoFarmTask.java     # ⭐ Auto-farm system (12 crop types)
+├── commands/
+│   ├── BuildCommand.java         # @build with rotation
+│   ├── AutoFarmCommand.java      # @auto-farm command
+│   ├── HelpCommand.java          # ⭐ Categorized help
+│   └── InfoCommand.java          # @info with farm crops
 ├── tasksystem/
 │   ├── TaskRunner.java           # ⭐ Tick loop + watchdog
 │   └── TaskChain.java            # Task chain system
 ├── chains/
+│   ├── MobDefenseChain.java      # ⭐ Combat + retreat logic
 │   ├── WorldSurvivalChain.java   # ⭐ Survival + fall protection
 │   └── MLGBucketFallChain.java   # MLG water bucket
 ├── ui/
-│   └── CommandStatusOverlay.java # ⭐ HUD overlay
+│   └── CommandStatusOverlay.java # ⭐ HUD overlay (build + combat)
 └── util/
+    ├── CombatManager.java        # ⭐ Advanced combat (shield/crit/strafe)
     ├── AutoToolEquip.java        # ⭐ Auto-equip best tool/weapon
+    ├── KillAura.java             # ⭐ Combat aura + crit integration
     ├── RotatedSchematic.java     # ⭐ Schematic rotation wrapper
     ├── Dimension.java            # Enum + current()
     ├── CubeBounds.java           # Bounding box + dimension
@@ -118,7 +194,7 @@ src/main/java/adris/altoclef/
 
 - [Original Alto Clef](https://github.com/gaucho-matrero/altoclef) by gaucho-matrero
 - [Meloweh's Fork](https://github.com/Meloweh/altoclef) — schematic builder
-- **Gia Huy** — state machine, rotation, auto-equip, dimension-aware avoidance, fall protection, block mapper, watchdog
+- **Gia Huy** — state machine, rotation, auto-equip, auto-farm, advanced combat, dimension-aware avoidance, fall protection, block mapper, watchdog, HUD overlay
 
 ## License
 

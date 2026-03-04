@@ -7,7 +7,7 @@ import adris.altoclef.tasks.misc.speedrun.BeatMinecraft2Task;
 
 public class GamerCommand extends Command {
     public GamerCommand() {
-        super("gamer", "Beats the game");
+        super("gamer", "Auto speedrun - beats Minecraft (kill Ender Dragon)");
     }
 
     @Override

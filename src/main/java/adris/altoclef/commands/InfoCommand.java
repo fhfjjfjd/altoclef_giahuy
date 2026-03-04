@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class InfoCommand extends Command {
     public InfoCommand() {
-        super("info", "Show commands, loaded schematics, and block info");
+        super("info", "Show all commands, schematics, farm crops, build status");
     }
 
     @Override
@@ -59,6 +59,14 @@ public class InfoCommand extends Command {
         } else {
             mod.log("  Builder: INACTIVE", MessagePriority.OPTIONAL);
         }
+
+        // Show supported auto-farm crops
+        mod.log("========== AUTO-FARM CROPS ==========", MessagePriority.OPTIONAL);
+        mod.log("  Farmland: wheat, carrot, potato, beetroot", MessagePriority.OPTIONAL);
+        mod.log("  Ground:   sugar_cane, cactus, bamboo, sweet_berries, melon, pumpkin", MessagePriority.OPTIONAL);
+        mod.log("  Nether:   nether_wart", MessagePriority.OPTIONAL);
+        mod.log("  Tree:     cocoa_beans", MessagePriority.OPTIONAL);
+        mod.log("  Usage:    @auto-farm <crop> [count]", MessagePriority.OPTIONAL);
 
         // Show current task
         mod.log("========== CURRENT TASK ==========", MessagePriority.OPTIONAL);

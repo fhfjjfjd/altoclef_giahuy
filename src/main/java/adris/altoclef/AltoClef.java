@@ -14,6 +14,7 @@ import adris.altoclef.ui.CommandStatusOverlay;
 import adris.altoclef.ui.MessagePriority;
 import adris.altoclef.ui.MessageSender;
 import adris.altoclef.util.AutoToolEquip;
+import adris.altoclef.util.CombatManager;
 import adris.altoclef.util.CubeBounds;
 import adris.altoclef.util.Dimension;
 import adris.altoclef.util.InputControls;
@@ -82,6 +83,8 @@ public class AltoClef implements ModInitializer {
     private MessageSender _messageSender;
     private InputControls _inputControls;
     private SlotHandler _slotHandler;
+    // Combat
+    private CombatManager _combatManager;
     // Butler
     private Butler _butler;
 
@@ -145,6 +148,8 @@ public class AltoClef implements ModInitializer {
         _messageSender = new MessageSender();
         _inputControls = new InputControls();
         _slotHandler = new SlotHandler(this);
+
+        _combatManager = new CombatManager();
 
         _butler = new Butler(this);
 
@@ -406,6 +411,10 @@ public class AltoClef implements ModInitializer {
 
     public InputControls getInputControls() {
         return _inputControls;
+    }
+
+    public CombatManager getCombatManager() {
+        return _combatManager;
     }
 
     // Extra control

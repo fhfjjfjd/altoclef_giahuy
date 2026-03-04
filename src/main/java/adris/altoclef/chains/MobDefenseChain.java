@@ -9,6 +9,7 @@ import adris.altoclef.tasks.movement.RunAwayFromCreepersTask;
 import adris.altoclef.tasks.movement.RunAwayFromHostilesTask;
 import adris.altoclef.tasksystem.TaskRunner;
 import adris.altoclef.trackers.EntityTracker;
+import adris.altoclef.util.CombatManager;
 import adris.altoclef.util.KillAura;
 import adris.altoclef.util.baritone.BaritoneHelper;
 import adris.altoclef.util.baritone.CachedProjectile;
@@ -103,6 +104,14 @@ public class MobDefenseChain extends SingleTaskChain {
 
         if (prioritizeEating(mod)) {
             return Float.NEGATIVE_INFINITY;
+        }
+
+        // Combat retreat: back off to heal when HP is critically low
+        CombatManager combat = mod.getCombatManager();
+        if (combat.shouldRetreat(mod) && !mod.getEntityTracker().getHostiles().isEmpty()) {
+            _runAwayTask = new RunAwayFromHostilesTask(DANGER_KEEP_DISTANCE, true);
+            setTask(_runAwayTask);
+            return 75;
         }
 
         // Force field
