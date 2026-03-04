@@ -2,6 +2,7 @@ package adris.altoclef.ui;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.tasks.SchematicBuildTask;
+import adris.altoclef.tasks.resources.AutoFarmTask;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.CombatManager;
 import baritone.process.BuilderProcess;
@@ -30,7 +31,10 @@ public class CommandStatusOverlay {
             // Draw combat info below task chain
             dy = drawCombatInfo(renderer, matrixstack, 0, dy + 4, mod);
 
-            // Draw build info below combat info
+            // Draw farm info
+            dy = drawFarmInfo(renderer, matrixstack, 0, dy + 4, mod);
+
+            // Draw build info
             dy = drawBuildInfo(renderer, matrixstack, 0, dy + 4, mod);
         }
     }
@@ -94,6 +98,42 @@ public class CommandStatusOverlay {
             // Ignore render errors
         }
         return dy;
+    }
+
+    private float drawFarmInfo(TextRenderer renderer, MatrixStack stack, float dx, float dy, AltoClef mod) {
+        try {
+            AutoFarmTask farmTask = findAutoFarmTask(mod);
+            if (farmTask == null) return dy;
+
+            AutoFarmTask.FarmState state = farmTask.getFarmState();
+            int stateColor;
+            switch (state) {
+                case HARVESTING:    stateColor = 0xFF55FF55; break; // green
+                case REPLANTING:    stateColor = 0xFFAAFFAA; break; // light green
+                case BONE_MEALING:  stateColor = 0xFFFFFF55; break; // yellow
+                case EXPANDING:
+                case TILLING:       stateColor = 0xFFFFAA00; break; // orange
+                case GETTING_SEEDS:
+                case GETTING_HOE:   stateColor = 0xFF55FFFF; break; // cyan
+                case PICKING_UP:    stateColor = 0xFFAAAAFF; break; // light blue
+                default:            stateColor = 0xFFAAAAAA; break; // gray
+            }
+
+            renderer.draw(stack, "\uD83C\uDF3E [Farm: " + state.name() + "]", dx, dy, stateColor);
+            dy += renderer.fontHeight + 2;
+        } catch (Exception e) {
+            // Ignore render errors
+        }
+        return dy;
+    }
+
+    private AutoFarmTask findAutoFarmTask(AltoClef mod) {
+        if (mod.getTaskRunner().getCurrentTaskChain() == null) return null;
+        List<Task> tasks = mod.getTaskRunner().getCurrentTaskChain().getTasks();
+        for (Task task : tasks) {
+            if (task instanceof AutoFarmTask) return (AutoFarmTask) task;
+        }
+        return null;
     }
 
     private float drawBuildInfo(TextRenderer renderer, MatrixStack stack, float dx, float dy, AltoClef mod) {
