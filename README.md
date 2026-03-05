@@ -19,7 +19,12 @@ Powered by Baritone. Forked by **Gia Huy**.
 ### 🌾 Farming
 - **Auto-Farm System** — Fully automatic crop farming with `@auto-farm <crop> <count>`
 - Supports 12 crop types: wheat, carrot, potato, beetroot, sugar_cane, melon, pumpkin, cactus, bamboo, sweet_berries, nether_wart, cocoa_beans
-- Auto-harvest mature crops, replant, create farmland, acquire seeds
+- **Farmland Expansion** — Auto-builds 9x9 farm plots around water sources (up to 4 plots), auto-tills dirt
+- **Bone Meal** — Auto-uses bone meal on immature crops to speed up growth
+- **Smart Harvesting** — Sugar cane/cactus/bamboo: only breaks upper blocks (preserves base). Sweet berries: right-click harvest (doesn't destroy bush)
+- **Nether Wart** — Harvests at age 3, replants on soul sand
+- **Auto Seed Management** — Picks up dropped seeds, acquires new seeds when needed
+- **Farm HUD** — Shows farm state (HARVESTING/REPLANTING/BONE_MEALING/EXPANDING/TILLING/SEARCHING)
 
 ### ⚔️ Combat
 - **Advanced Combat Manager** — Shield auto-blocking, critical hits, sprint-reset combos, circle strafing
@@ -34,7 +39,7 @@ Powered by Baritone. Forked by **Gia Huy**.
 
 ### 🔧 System
 - **Global Stuck Watchdog** — Resets task chain if no movement for 30 seconds
-- **HUD Overlay** — Builder state + missing blocks + combat status + HP
+- **HUD Overlay** — Builder state + missing blocks + combat status + farm state + HP
 - **Categorized Help** — `@help` shows commands grouped by category
 - **`@info` Command** — View commands, schematics, farm crops, build status
 
@@ -177,7 +182,7 @@ src/main/java/adris/altoclef/
 │   ├── WorldSurvivalChain.java   # ⭐ Survival + fall protection
 │   └── MLGBucketFallChain.java   # MLG water bucket
 ├── ui/
-│   └── CommandStatusOverlay.java # ⭐ HUD overlay (build + combat)
+│   └── CommandStatusOverlay.java # ⭐ HUD overlay (build + combat + farm)
 └── util/
     ├── CombatManager.java        # ⭐ Advanced combat (shield/crit/strafe)
     ├── AutoToolEquip.java        # ⭐ Auto-equip best tool/weapon
