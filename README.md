@@ -15,6 +15,11 @@ Powered by Baritone. Forked by **Gia Huy**.
 - **Schematic Rotation** — Rotate schematics 90°/180°/270° before building with `@build file.schem 90`
 - **Sourcing Hysteresis** — Bot collects ALL required materials before returning to build
 - **Unsupported Block Mapper** — Maps unusual schematic blocks to obtainable items, skips unobtainable blocks
+- **Multi-schematic Build Queue** — Build multiple schematics in sequence with `@buildmulti house.schem,wall.schem 90`
+- **Undo Last Build** — Clear the most recently recorded build area with `@buildundo`
+- **Waypoint Navigation** — Save/go/remove/list persistent waypoints with `@waypoint save|go|remove|list <name>`
+- **Auto-Explore** — Explore new chunks continuously with `@autoexplore`
+- **Auto-Mine / Auto-Smelt Triggers** — Start catalogue-backed sourcing with `@automine <resource>` and `@autosmelt <item>`
 
 ### 🌾 Farming
 - **Auto-Farm System** — Fully automatic crop farming with `@auto-farm <crop> <count>`
@@ -30,6 +35,7 @@ Powered by Baritone. Forked by **Gia Huy**.
 - **Advanced Combat Manager** — Shield auto-blocking, critical hits, sprint-reset combos, circle strafing
 - **Auto-Equip Weapon** — Automatically equips the best weapon (netherite > diamond > iron, swords + axes ranked by damage)
 - **Smart Retreat** — Bot retreats to heal when HP is critically low
+- **Opportunistic Totem Acquisition** — Automatically hunts nearby Evokers for Totems of Undying during speedruns
 - **Combat HUD** — Shows combat state (ENGAGING/BLOCKING/RETREATING) + HP bar
 
 ### 🛡️ Survival
@@ -42,6 +48,7 @@ Powered by Baritone. Forked by **Gia Huy**.
 - **HUD Overlay** — Builder state + missing blocks + combat status + farm state + HP
 - **Categorized Help** — `@help` shows commands grouped by category
 - **`@info` Command** — View commands, schematics, farm crops, build status
+- **Advanced Computational Algorithms** — Standalone implementations of FFT, Gaussian Elimination, Strassen Matrix Multiplication, and Modular Exponentiation
 
 ---
 
@@ -85,6 +92,8 @@ The JAR will be in `build/libs/`.
 | `@build <file.schem>` | Build a schematic at player position |
 | `@build <file.schem> <90/180/270>` | Build with clockwise rotation |
 | `@autofill <materials...>` | Fill a target chest with specified materials |
+| `@buildmulti <file1,file2,...> [0/90/180/270]` | Build multiple schematics in order |
+| `@buildundo` | Undo last recorded build region (clears area) |
 
 ### Farming
 | Command | Description |
@@ -105,6 +114,11 @@ The JAR will be in `build/libs/`.
 |---------|-------------|
 | `@goto <x> <y> <z>` | Go to coordinates |
 | `@follow <player>` | Follow a player |
+| `@waypoint save <name>` | Save current position as a waypoint |
+| `@waypoint go <name>` | Travel to a saved waypoint |
+| `@waypoint remove <name>` | Remove a saved waypoint |
+| `@waypoint list` | List all saved waypoints |
+| `@autoexplore` | Continuously explore new chunks |
 | `@roundtrip <x> <y> <z>` | Travel to coordinates and back |
 | `@coords` | Show current coordinates and dimension |
 | `@locate_structure <name>` | Find a structure |
@@ -113,6 +127,8 @@ The JAR will be in `build/libs/`.
 | Command | Description |
 |---------|-------------|
 | `@get <item> [count]` | Obtain any item |
+| `@automine <resource> [count]` | Trigger auto resource collection via TaskCatalogue |
+| `@autosmelt <item> [count]` | Trigger smelt-oriented sourcing via TaskCatalogue |
 | `@list` | List all obtainable items |
 | `@give <player> <item> [count]` | Give item to a player |
 | `@punk <player>` | Attack a player |
@@ -128,6 +144,14 @@ The JAR will be in `build/libs/`.
 | `@stop` | Stop the current task |
 | `@reload_settings` | Reload settings from file |
 | `@gamma <value>` | Set brightness level |
+
+
+## Notes for New Commands
+
+- `@waypoint` data is persisted in `altoclef_waypoints.txt` in your `.minecraft` root.
+- `@buildmulti` accepts comma-separated filenames, e.g. `@buildmulti base.schem,roof.schem 90`.
+- `@buildundo` clears the last recorded schematic bounds, so use it carefully in survival worlds.
+- `@automine`/`@autosmelt` depend on resource names that exist in `TaskCatalogue`.
 
 ---
 
@@ -190,6 +214,8 @@ src/main/java/adris/altoclef/
     ├── RotatedSchematic.java     # ⭐ Schematic rotation wrapper
     ├── Dimension.java            # Enum + current()
     ├── CubeBounds.java           # Bounding box + dimension
+    ├── WaypointStore.java        # ⭐ Waypoint persistence
+    ├── AdvancedAlgorithms.java   # ⭐ FFT, Gaussian, Strassen, Modular Exp
     └── SchematicBlockMapper.java # ⭐ Block → Item mapper
 ```
 

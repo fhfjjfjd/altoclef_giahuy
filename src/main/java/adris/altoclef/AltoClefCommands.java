@@ -32,7 +32,13 @@ public class AltoClefCommands {
                 new BuildCommand(),
                 new FillTargetChestCommand(),
                 new InfoCommand(),
-                new AutoFarmCommand()
+                new AutoFarmCommand(),
+                new WaypointCommand(),
+                new AutoExploreCommand(),
+                new BuildMultiCommand(),
+                new UndoBuildCommand(),
+                new AutoMineCommand(),
+                new AutoSmeltCommand()
                 //new TestMoveInventoryCommand(),
                 //    new TestSwapInventoryCommand()
         );
