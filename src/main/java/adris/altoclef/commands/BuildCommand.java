@@ -4,6 +4,7 @@ import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.commandsystem.*;
 import adris.altoclef.tasks.SchematicBuildTask;
+import adris.altoclef.util.BuildHistoryStore;
 
 public class BuildCommand extends Command {
     public BuildCommand() throws CommandException {
@@ -35,6 +36,8 @@ public class BuildCommand extends Command {
             case 270: rotationSteps = 3; break;
             default:  rotationSteps = 0; break;
         }
+
+        BuildHistoryStore.record(name, mod.getPlayer().getBlockPos(), rotationSteps);
 
         if (rotationSteps != 0) {
             Debug.logMessage("Building " + name + " with " + rotation + "° rotation");
