@@ -12,6 +12,16 @@ Commands are prefixed with `@`. Here's a list along with their functions:
 | --------| ------------|---|
 | `help` | Lists all commands | |
 | `coords` | Prints the bot's current coordinates. This is here in cases where the `F3` menu gets too crowded.|
+| `build [file.schem] [rotation=0/90/180/270]` | Builds schematic file at current position with optional rotation. | `@build house.schem 90` |
+| `buildmulti [file1.schem,file2.schem,...] [rotation=0/90/180/270]` | Builds multiple schematic files sequentially. | `@buildmulti base.schem,roof.schem 0` |
+| `buildundo` | Clears the last recorded schematic build region. | `@buildundo` |
+| `waypoint save [name]` | Save current position as waypoint `[name]`. | `@waypoint save base` |
+| `waypoint go [name]` | Travel to saved waypoint `[name]`. | `@waypoint go base` |
+| `waypoint remove [name]` | Remove saved waypoint `[name]`. | `@waypoint remove base` |
+| `waypoint list` | List all saved waypoints. | `@waypoint list` |
+| `autoexplore` | Explore chunks continuously using Baritone explore process. | `@autoexplore` |
+| `automine [resource] [count=1]` | Trigger catalogue-backed auto collection for a resource key. | `@automine iron_ore 32` |
+| `autosmelt [item] [count=1]` | Trigger catalogue-backed sourcing for smelt output item. | `@autosmelt iron_ingot 32` |
 | `equip [item]` | Equips `[item]`. If not in the bot's inventory, bot will obtain it. | `@equip diamond_sword`|
 | `follow [player=<you>]` | Follow a player. If sent via `/msg`, will follow the player who sent the command. | `@follow TacoTechnica` `/msg Bot follow` |
 | `food [amount]` | Collects `[amount]` units of food (1 unit = 1/2 drumstick). Collects from various sources (animals, crops) | `@food 20` |
@@ -86,3 +96,11 @@ picked up by altoclef, you can append the server's custom whisper format in the 
 
 **WARNING:** Be careful with this one as well, as the bot will trust these formats for ALL non-player chat messages.
 Messing up the format's ordering can let unauthorized people execute bot commands.
+
+
+## Notes for Added Commands
+
+- Waypoints are persisted in `altoclef_waypoints.txt` in your `.minecraft` directory.
+- `buildmulti` expects comma-separated schematic names (no spaces preferred).
+- `buildundo` will clear the whole last recorded schematic area. Use with caution.
+- `automine`/`autosmelt` only work for resources registered in `TaskCatalogue`.

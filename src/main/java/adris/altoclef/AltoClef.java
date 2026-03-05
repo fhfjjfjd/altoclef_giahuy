@@ -18,6 +18,7 @@ import adris.altoclef.util.CombatManager;
 import adris.altoclef.util.CubeBounds;
 import adris.altoclef.util.Dimension;
 import adris.altoclef.util.InputControls;
+import adris.altoclef.util.WaypointStore;
 import adris.altoclef.util.control.BotBehaviour;
 import adris.altoclef.util.control.PlayerExtraController;
 import adris.altoclef.util.control.SlotHandler;
@@ -83,6 +84,7 @@ public class AltoClef implements ModInitializer {
     private MessageSender _messageSender;
     private InputControls _inputControls;
     private SlotHandler _slotHandler;
+    private WaypointStore _waypointStore;
     // Combat
     private CombatManager _combatManager;
     // Butler
@@ -148,6 +150,7 @@ public class AltoClef implements ModInitializer {
         _messageSender = new MessageSender();
         _inputControls = new InputControls();
         _slotHandler = new SlotHandler(this);
+        _waypointStore = new WaypointStore();
 
         _combatManager = new CombatManager();
 
@@ -390,6 +393,10 @@ public class AltoClef implements ModInitializer {
 
     public SlotHandler getSlotHandler() {
         return _slotHandler;
+    }
+
+    public WaypointStore getWaypointStore() {
+        return _waypointStore;
     }
 
     // Minecraft access
