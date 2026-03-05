@@ -6,6 +6,7 @@ import adris.altoclef.TaskCatalogue;
 import adris.altoclef.tasks.DoToClosestBlockTask;
 import adris.altoclef.tasks.InteractWithBlockTask;
 import adris.altoclef.tasks.misc.EquipArmorTask;
+import adris.altoclef.tasks.entity.KillEntityTask;
 import adris.altoclef.tasks.misc.PlaceBedAndSetSpawnTask;
 import adris.altoclef.tasks.movement.DefaultGoToDimensionTask;
 import adris.altoclef.tasks.movement.GetCloseToBlockTask;
@@ -22,6 +23,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.EndPortalFrameBlock;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.mob.EvokerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
@@ -46,6 +48,10 @@ public class BeatMinecraft2Task extends Task {
     private static final int MIN_FOOD_UNITS = 10;
     private static final int MIN_BUILD_MATERIALS = 5;
     private static final int BUILD_MATERIALS = 40;
+
+    private static final int TOTEM_TARGET = 1;
+    private static final double TOTEM_HUNT_RANGE = 160;
+
 
     private static final ItemTarget[] COLLECT_EYE_GEAR = combine(
             toItemTargets(ItemHelper.DIAMOND_ARMORS),
@@ -176,6 +182,12 @@ public class BeatMinecraft2Task extends Task {
                 // TODO: Test that this works, for some reason the bot gets stuck near the stronghold and it keeps "Searching" for the portal
                 _endPortalCenterLocation = doSimpleSearchForEndPortal(mod);
             }
+        }
+
+        // Opportunistic totem support before end prep.
+        Task totemTask = getTotemSupportTask(mod);
+        if (totemTask != null) {
+            return totemTask;
         }
 
         // Do we need more eyes?
@@ -524,6 +536,28 @@ public class BeatMinecraft2Task extends Task {
             return false;
         }
         return state.get(EndPortalFrameBlock.EYE);
+    }
+
+
+    private Task getTotemSupportTask(AltoClef mod) {
+        if (mod.getCurrentDimension() != Dimension.OVERWORLD) return null;
+        if (mod.getInventoryTracker().getItemCount(Items.TOTEM_OF_UNDYING) >= TOTEM_TARGET) return null;
+
+        if (mod.getEntityTracker().itemDropped(Items.TOTEM_OF_UNDYING)) {
+            setDebugState("Picking up dropped totem");
+            return new PickupDroppedItemTask(Items.TOTEM_OF_UNDYING, TOTEM_TARGET);
+        }
+
+        EvokerEntity evoker = (EvokerEntity) mod.getEntityTracker().getClosestEntity(
+                mod.getPlayer().getPos(),
+                entity -> entity.squaredDistanceTo(mod.getPlayer()) <= TOTEM_HUNT_RANGE * TOTEM_HUNT_RANGE,
+                EvokerEntity.class
+        );
+        if (evoker != null) {
+            setDebugState("Hunting nearby evoker for totem");
+            return new KillEntityTask(evoker);
+        }
+        return null;
     }
 
     // Just a helpful utility to reduce reuse recycle.
