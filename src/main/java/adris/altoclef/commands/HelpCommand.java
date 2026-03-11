@@ -1,8 +1,10 @@
 package adris.altoclef.commands;
 
 import adris.altoclef.AltoClef;
+import adris.altoclef.commandsystem.Arg;
 import adris.altoclef.commandsystem.ArgParser;
 import adris.altoclef.commandsystem.Command;
+import adris.altoclef.commandsystem.CommandException;
 import adris.altoclef.ui.MessagePriority;
 
 import java.util.*;
@@ -41,13 +43,29 @@ public class HelpCommand extends Command {
         COMMAND_CATEGORIES.put("test", "System");
     }
 
-    public HelpCommand() {
-        super("help", "Lists all commands grouped by category");
+    public HelpCommand() throws CommandException {
+        super("help", "Lists all commands grouped by category or detailed usage for a specific command", new Arg<>(String.class, "command", "", 0, false));
     }
 
     @Override
-    protected void call(AltoClef mod, ArgParser parser) {
-        mod.log("========== ALTOCLEF GIAHUY HELP ==========", MessagePriority.OPTIONAL);
+    protected void call(AltoClef mod, ArgParser parser) throws CommandException {
+        String commandName = parser.get(String.class).trim();
+        if (!commandName.isEmpty()) {
+            Command found = mod.getCommandExecutor().get(commandName);
+            if (found == null) {
+                throw new CommandException("No command named '" + commandName + "' exists.");
+            }
+
+            mod.log("========== COMMAND HELP ==========" , MessagePriority.OPTIONAL);
+            mod.log("@" + found.getName() + " - " + found.getDescription(), MessagePriority.OPTIONAL);
+            mod.log("Usage: @" + found.getHelpRepresentation(), MessagePriority.OPTIONAL);
+            mod.log("Category: " + COMMAND_CATEGORIES.getOrDefault(found.getName(), "Other"), MessagePriority.OPTIONAL);
+            mod.log("==================================", MessagePriority.OPTIONAL);
+            finish();
+            return;
+        }
+
+        mod.log("========== ALTOCLEF GIAHUY HELP ==========" , MessagePriority.OPTIONAL);
 
         // Group commands by category
         Map<String, List<Command>> groups = new LinkedHashMap<>();
@@ -61,6 +79,11 @@ public class HelpCommand extends Command {
                 uncategorized.add(c);
             }
         }
+
+        for (List<Command> group : groups.values()) {
+            group.sort(Comparator.comparing(Command::getName));
+        }
+        uncategorized.sort(Comparator.comparing(Command::getName));
 
         // Print each category
         for (Map.Entry<String, List<Command>> entry : groups.entrySet()) {
@@ -85,9 +108,9 @@ public class HelpCommand extends Command {
     private void printCommand(AltoClef mod, Command c) {
         StringBuilder line = new StringBuilder();
         line.append("  @").append(c.getName());
-        int pad = 14 - c.getName().length();
+        int pad = Math.max(1, 14 - c.getName().length());
         for (int i = 0; i < pad; ++i) line.append(" ");
-        line.append(c.getDescription());
+        line.append(c.getDescription()).append(" | Usage: @").append(c.getHelpRepresentation());
         mod.log(line.toString(), MessagePriority.OPTIONAL);
     }
 }
