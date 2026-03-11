@@ -84,6 +84,7 @@ The JAR will be in `build/libs/`.
 |---------|-------------|
 | `@build <file.schem>` | Build a schematic at player position |
 | `@build <file.schem> <90/180/270>` | Build with clockwise rotation |
+| `@build <file.schem> [0/90/180/270] [yOffset]` | Build with optional rotation and vertical offset (use positive for high builds, negative for underground) |
 | `@autofill <materials...>` | Fill a target chest with specified materials |
 
 ### Farming
