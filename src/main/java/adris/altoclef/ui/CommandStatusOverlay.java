@@ -1,10 +1,12 @@
 package adris.altoclef.ui;
 
 import adris.altoclef.AltoClef;
+import adris.altoclef.tasks.DimensionAwareBuildTask;
 import adris.altoclef.tasks.SchematicBuildTask;
 import adris.altoclef.tasks.resources.AutoFarmTask;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.CombatManager;
+import adris.altoclef.util.Dimension;
 import baritone.process.BuilderProcess;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
@@ -149,6 +151,25 @@ public class CommandStatusOverlay {
             int warnColor = 0xFFFF5555;     // red
             float fontHeight = renderer.fontHeight;
 
+            // Dimension + mode info
+            DimensionAwareBuildTask dimBuildTask = findDimensionAwareBuildTask(mod);
+            if (dimBuildTask != null) {
+                Dimension dim = dimBuildTask.getBuildDimension();
+                DimensionAwareBuildTask.BuildMode bMode = dimBuildTask.getResolvedMode();
+                int dimColor;
+                switch (dim) {
+                    case NETHER: dimColor = 0xFFFF5555; break;  // red
+                    case END:    dimColor = 0xFFDD55FF; break;  // purple
+                    default:     dimColor = 0xFF55FF55; break;  // green
+                }
+                String dimInfo = "\u2302 " + dim.name();
+                if (bMode != null && bMode != DimensionAwareBuildTask.BuildMode.SURFACE) {
+                    dimInfo += " [" + bMode.name() + "]";
+                }
+                renderer.draw(stack, dimInfo, dx, dy, dimColor);
+                dy += fontHeight + 2;
+            }
+
             // Builder status - show state machine state if available
             String status;
             int statusColor;
@@ -162,6 +183,10 @@ public class CommandStatusOverlay {
                     case RECOVERING: statusColor = warnColor; break;
                     default: statusColor = valueColor;
                 }
+            } else if (dimBuildTask != null) {
+                DimensionAwareBuildTask.Phase phase = dimBuildTask.getPhase();
+                status = phase.name();
+                statusColor = phase == DimensionAwareBuildTask.Phase.PREPARING ? labelColor : valueColor;
             } else {
                 status = builder.isPaused() ? "PAUSED" : "BUILDING";
                 statusColor = builder.isPaused() ? warnColor : valueColor;
@@ -200,6 +225,17 @@ public class CommandStatusOverlay {
         for (Task task : tasks) {
             if (task instanceof SchematicBuildTask) {
                 return (SchematicBuildTask) task;
+            }
+        }
+        return null;
+    }
+
+    private DimensionAwareBuildTask findDimensionAwareBuildTask(AltoClef mod) {
+        if (mod.getTaskRunner().getCurrentTaskChain() == null) return null;
+        List<Task> tasks = mod.getTaskRunner().getCurrentTaskChain().getTasks();
+        for (Task task : tasks) {
+            if (task instanceof DimensionAwareBuildTask) {
+                return (DimensionAwareBuildTask) task;
             }
         }
         return null;

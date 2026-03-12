@@ -3,27 +3,35 @@ package adris.altoclef.commands;
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.commandsystem.*;
-import adris.altoclef.tasks.SchematicBuildTask;
+import adris.altoclef.tasks.DimensionAwareBuildTask;
+import adris.altoclef.tasks.DimensionAwareBuildTask.BuildMode;
 
 public class BuildCommand extends Command {
     public BuildCommand() throws CommandException {
-        super("build", "Build schematic with rotation. Usage: @build <file.schem> [0/90/180/270]",
+        super("build", "Build schematic. Usage: @build <file.schem> [0/90/180/270] [auto/elevated/underground/surface]",
                 new Arg(String.class, "filename", "", 0),
-                new Arg(Integer.class, "rotation", 0, 0));
+                new Arg(Integer.class, "rotation", 0, 0),
+                new Arg(String.class, "mode", "auto", 0));
     }
 
     @Override
     protected void call(AltoClef mod, ArgParser parser) throws CommandException {
         String name = "";
         int rotation = 0;
+        String modeStr = "auto";
+
         try {
             name = parser.get(String.class);
         } catch (CommandException e) {
-            Debug.logError("Cannot parse parameter. Input format: '@build house.schem [0/90/180/270]'");
+            Debug.logError("Usage: @build <file.schem> [0/90/180/270] [auto/elevated/underground/surface]");
             return;
         }
         try {
             rotation = parser.get(Integer.class);
+        } catch (CommandException ignored) {
+        }
+        try {
+            modeStr = parser.get(String.class);
         } catch (CommandException ignored) {
         }
 
@@ -36,10 +44,34 @@ public class BuildCommand extends Command {
             default:  rotationSteps = 0; break;
         }
 
-        if (rotationSteps != 0) {
-            Debug.logMessage("Building " + name + " with " + rotation + "° rotation");
+        // Parse build mode
+        BuildMode mode;
+        switch (modeStr.toLowerCase()) {
+            case "elevated":
+            case "high":
+            case "sky":
+                mode = BuildMode.ELEVATED;
+                break;
+            case "underground":
+            case "under":
+            case "dig":
+                mode = BuildMode.UNDERGROUND;
+                break;
+            case "surface":
+            case "ground":
+                mode = BuildMode.SURFACE;
+                break;
+            default:
+                mode = BuildMode.AUTO;
+                break;
         }
 
-        mod.runUserTask(new SchematicBuildTask(name, rotationSteps));
+        if (rotationSteps != 0) {
+            Debug.logMessage("Building " + name + " with " + rotation + "° rotation, mode=" + mode.name());
+        } else {
+            Debug.logMessage("Building " + name + ", mode=" + mode.name());
+        }
+
+        mod.runUserTask(new DimensionAwareBuildTask(name, rotationSteps, mode));
     }
 }
