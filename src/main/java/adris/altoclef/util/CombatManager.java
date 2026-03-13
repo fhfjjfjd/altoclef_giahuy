@@ -3,7 +3,7 @@ package adris.altoclef.util;
 import adris.altoclef.AltoClef;
 import baritone.api.utils.input.Input;
 import net.minecraft.entity.Entity;
-import net.minecraft.item.Items;
+import net.minecraft.item.*;
 
 /**
  * Advanced combat manager - handles shield blocking, critical hits,
@@ -15,6 +15,7 @@ public class CombatManager {
         IDLE, ENGAGING, BLOCKING, RETREATING
     }
 
+    private AltoClef _mod;
     private CombatState _state = CombatState.IDLE;
 
     // Strafing
@@ -33,6 +34,10 @@ public class CombatManager {
     private boolean _jumpingForCrit = false;
     private int _critJumpTimer = 0;
 
+    // Durability checking
+    private static final int DURABILITY_CHECK_INTERVAL = 20; // Check every second (20 ticks)
+    private int _durabilityCheckTimer = 0;
+
     // Thresholds
     private static final float RETREAT_HEALTH = 6.0f;
     private static final float COOLDOWN_READY = 0.95f;
@@ -42,6 +47,8 @@ public class CombatManager {
      * Main tick - call each game tick when in active combat with a target.
      */
     public void tick(AltoClef mod, Entity target) {
+        _mod = mod;
+        
         if (!AltoClef.inGame() || mod.getPlayer() == null || target == null) {
             reset(mod);
             return;
@@ -56,6 +63,9 @@ public class CombatManager {
         }
 
         _state = CombatState.ENGAGING;
+
+        // Check durability and potentially auto-craft items
+        tickDurabilityCheck(mod);
 
         double dist = mod.getPlayer().distanceTo(target);
 
@@ -74,6 +84,67 @@ public class CombatManager {
 
         // Critical hit jump timing
         tickCriticalHitJump(mod);
+    }
+
+    /**
+     * Check durability of weapons and armor, and initiate crafting if needed.
+     */
+    private void tickDurabilityCheck(AltoClef mod) {
+        _durabilityCheckTimer++;
+        if (_durabilityCheckTimer >= DURABILITY_CHECK_INTERVAL) {
+            _durabilityCheckTimer = 0;
+            
+            // Check if weapon durability is low and we should craft a new one
+            if (DurabilityChecker.shouldCraftNewWeapon(mod)) {
+                Item weaponToCraft = DurabilityChecker.getWeaponToCraft(mod);
+                if (weaponToCraft != null) {
+                    mod.log("Weapon durability is low, should craft new weapon: " + weaponToCraft.getName().getString());
+                    // This would trigger a crafting task in a real implementation
+                }
+            }
+            
+            // Check if armor durability is low and we should craft new armor
+            if (DurabilityChecker.shouldCraftNewArmor(mod)) {
+                java.util.List<Item> armorToCraft = DurabilityChecker.getArmorToCraft(mod);
+                for (Item armorItem : armorToCraft) {
+                    mod.log("Armor durability is low, should craft new armor: " + armorItem.getName().getString());
+                    // This would trigger a crafting task in a real implementation
+                }
+            }
+        }
+    }
+    
+    /**
+     * Checks if weapons or armor need to be crafted due to low durability.
+     * This can be called from outside the combat system to determine if crafting is needed.
+     */
+    public boolean shouldCraftItemsForDurability(AltoClef mod) {
+        return DurabilityChecker.shouldCraftNewWeapon(mod) || DurabilityChecker.shouldCraftNewArmor(mod);
+    }
+    
+    /**
+     * Gets the tasks needed to craft items due to low durability.
+     * This can be called from outside the combat system to get the crafting tasks.
+     */
+    public adris.altoclef.tasksystem.Task getDurabilityCraftingTask(AltoClef mod) {
+        // First check if we should craft a weapon
+        if (DurabilityChecker.shouldCraftNewWeapon(mod)) {
+            Item weaponToCraft = DurabilityChecker.getWeaponToCraft(mod);
+            if (weaponToCraft != null) {
+                return new adris.altoclef.tasks.misc.CraftDurabilityTask(weaponToCraft);
+            }
+        }
+        
+        // Then check if we should craft armor
+        if (DurabilityChecker.shouldCraftNewArmor(mod)) {
+            java.util.List<Item> armorToCraft = DurabilityChecker.getArmorToCraft(mod);
+            if (!armorToCraft.isEmpty()) {
+                // For now, craft the first armor piece that needs replacement
+                return new adris.altoclef.tasks.misc.CraftDurabilityTask(armorToCraft.get(0));
+            }
+        }
+        
+        return null;
     }
 
     /**
@@ -242,4 +313,20 @@ public class CombatManager {
     public CombatState getState() { return _state; }
     public boolean isBlocking() { return _isBlocking; }
     public boolean isRetreating() { return _state == CombatState.RETREATING; }
+    
+    /**
+     * Check if PvP mode is enabled through the PvPManager
+     */
+    public boolean isPvPEnabled() {
+        return _mod != null && _mod.getPvPManager() != null && _mod.getPvPManager().isPvPEnabled();
+    }
+    
+    /**
+     * Enable or disable PvP mode
+     */
+    public void setPvPEnabled(AltoClef mod, boolean enabled) {
+        if (mod.getPvPManager() != null) {
+            mod.getPvPManager().setPvPEnabled(enabled);
+        }
+    }
 }

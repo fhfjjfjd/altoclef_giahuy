@@ -8,9 +8,15 @@ import net.minecraft.util.math.Vec3d;
 public class FollowPlayerTask extends Task {
 
     private final String _playerName;
+    private final double _followDistance;
 
     public FollowPlayerTask(String playerName) {
+        this(playerName, 2.0); // Default distance of 2 blocks
+    }
+    
+    public FollowPlayerTask(String playerName, double followDistance) {
         _playerName = playerName;
+        _followDistance = followDistance;
     }
 
     @Override
@@ -38,7 +44,7 @@ public class FollowPlayerTask extends Task {
             // Go to last location
             return new GetToBlockTask(new BlockPos((int) target.x, (int) target.y, (int) target.z), false);
         }
-        return new GetToEntityTask(mod.getEntityTracker().getPlayerEntity(_playerName), 2);
+        return new GetToEntityTask(mod.getEntityTracker().getPlayerEntity(_playerName), _followDistance);
     }
 
     @Override
@@ -49,13 +55,13 @@ public class FollowPlayerTask extends Task {
     @Override
     protected boolean isEqual(Task other) {
         if (other instanceof FollowPlayerTask task) {
-            return task._playerName.equals(_playerName);
+            return task._playerName.equals(_playerName) && task._followDistance == _followDistance;
         }
         return false;
     }
 
     @Override
     protected String toDebugString() {
-        return "Going to player " + _playerName;
+        return "Following player " + _playerName + " at distance " + _followDistance;
     }
 }

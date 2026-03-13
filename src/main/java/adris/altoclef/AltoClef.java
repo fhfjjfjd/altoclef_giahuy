@@ -52,6 +52,9 @@ public class AltoClef implements ModInitializer {
 
     // Static access to altoclef
     private static final Queue<Consumer<AltoClef>> _postInitQueue = new ArrayDeque<>();
+    
+    // Static instance for access from mixins
+    public static AltoClef INSTANCE;
 
     public final Action<String> onGameMessage = new Action<>();
     public final Action<String> onGameOverlayMessage = new Action<>();
@@ -85,6 +88,12 @@ public class AltoClef implements ModInitializer {
     private SlotHandler _slotHandler;
     // Combat
     private CombatManager _combatManager;
+    // PvP
+    private PvPManager _pvpManager;
+    // Build history
+    private BuildHistory _buildHistory = new BuildHistory();
+    // Waypoints
+    private WaypointManager _waypointManager = new WaypointManager();
     // Butler
     private Butler _butler;
 
@@ -150,8 +159,12 @@ public class AltoClef implements ModInitializer {
         _slotHandler = new SlotHandler(this);
 
         _combatManager = new CombatManager();
+        _pvpManager = new PvPManager();
 
         _butler = new Butler(this);
+
+        // Set the static instance for access from mixins
+        INSTANCE = this;
 
         // Misc wiring
         // When we place a block and might be tracking it, make the change immediate.
@@ -182,6 +195,24 @@ public class AltoClef implements ModInitializer {
 
         // Auto-equip best tool when mining
         AutoToolEquip.tick(this);
+
+        // Check for low durability items and craft replacements if needed
+        // Only do this when not currently running a user task
+        if (!_taskRunner.isActive() && getCombatManager().shouldCraftItemsForDurability(this)) {
+            // Get the durability crafting task and run it if available
+            adris.altoclef.tasksystem.Task durabilityTask = getCombatManager().getDurabilityCraftingTask(this);
+            if (durabilityTask != null) {
+                runUserTask(durabilityTask);
+            }
+        }
+
+        // Handle witch potion dodging
+        adris.altoclef.util.WitchManager.tick(this);
+
+        // Handle PvP retaliation
+        if (getPvPManager() != null) {
+            getPvPManager().tick(this);
+        }
 
         _butler.tick();
         _messageSender.tick();
@@ -415,6 +446,18 @@ public class AltoClef implements ModInitializer {
 
     public CombatManager getCombatManager() {
         return _combatManager;
+    }
+
+    public PvPManager getPvPManager() {
+        return _pvpManager;
+    }
+
+    public BuildHistory getBuildHistory() {
+        return _buildHistory;
+    }
+
+    public WaypointManager getWaypointManager() {
+        return _waypointManager;
     }
 
     // Extra control
