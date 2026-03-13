@@ -15,6 +15,10 @@ Powered by Baritone. Forked by **Gia Huy**.
 - **Schematic Rotation** — Rotate schematics 90°/180°/270° before building with `@build file.schem 90`
 - **Sourcing Hysteresis** — Bot collects ALL required materials before returning to build
 - **Unsupported Block Mapper** — Maps unusual schematic blocks to obtainable items, skips unobtainable blocks
+- **Dimension-Aware Building** — Auto-detects Overworld/Nether/End, adjusts height limits, warns about hazards (Nether ceiling, void)
+- **Scaffold System** — Auto-builds pillar/bridge scaffolding for elevated (high-altitude) construction
+- **Underground Excavation** — Auto-clears underground area before building, seals lava/water hazards on boundaries
+- **Build Modes** — `AUTO` (detect from Y), `ELEVATED` (force scaffold), `UNDERGROUND` (force excavation), `SURFACE` (normal)
 
 ### 🌾 Farming
 - **Auto-Farm System** — Fully automatic crop farming with `@auto-farm <crop> <count>`
@@ -34,7 +38,7 @@ Powered by Baritone. Forked by **Gia Huy**.
 
 ### 🛡️ Survival
 - **Fall Damage Prevention** — Auto-crouches near edges with ≥ 4 block drops
-- **Dimension-Aware Avoidance** — Avoidance recognizes dimensions (Overworld/Nether/End)
+- **Dimension-Aware System** — Height limits, ceiling detection, scaffold block preferences per dimension (Overworld/Nether/End)
 - **Auto-Equip Tool** — Automatically equips the best tool when mining
 
 ### 🔧 System
@@ -84,6 +88,9 @@ The JAR will be in `build/libs/`.
 |---------|-------------|
 | `@build <file.schem>` | Build a schematic at player position |
 | `@build <file.schem> <90/180/270>` | Build with clockwise rotation |
+| `@build <file.schem> [rotation] elevated` | Build with auto-scaffolding (high altitude) |
+| `@build <file.schem> [rotation] underground` | Build with auto-excavation (underground) |
+| `@build <file.schem> [rotation] auto` | Auto-detect build mode from position |
 | `@autofill <materials...>` | Fill a target chest with specified materials |
 
 ### Farming
@@ -167,6 +174,12 @@ src/main/java/adris/altoclef/
 ├── TaskCatalogue.java            # Item → task registry
 ├── tasks/
 │   ├── SchematicBuildTask.java   # ⭐ Core builder (state machine + rotation)
+│   ├── DimensionAwareBuildTask.java # ⭐ Dimension-aware build (scaffold/excavate)
+│   ├── construction/
+│   │   ├── ScaffoldTask.java        # ⭐ Auto-scaffold for elevated building
+│   │   ├── ExcavateAreaTask.java    # ⭐ Underground excavation with hazard seal
+│   │   ├── PlaceBlockTask.java      # Block placement logic
+│   │   └── ClearRegionTask.java     # Region clearing
 │   └── resources/
 │       └── AutoFarmTask.java     # ⭐ Auto-farm system (12 crop types)
 ├── commands/
@@ -199,7 +212,7 @@ src/main/java/adris/altoclef/
 
 - [Original Alto Clef](https://github.com/gaucho-matrero/altoclef) by gaucho-matrero
 - [Meloweh's Fork](https://github.com/Meloweh/altoclef) — schematic builder
-- **Gia Huy** — state machine, rotation, auto-equip, auto-farm, advanced combat, dimension-aware avoidance, fall protection, block mapper, watchdog, HUD overlay
+- **Gia Huy** — state machine, rotation, auto-equip, auto-farm, advanced combat, dimension-aware building, scaffold, excavation, fall protection, block mapper, watchdog, HUD overlay
 
 ## License
 

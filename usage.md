@@ -26,6 +26,7 @@ Commands are prefixed with `@`. Here's a list along with their functions:
 | `reload_settings` | Reloads the local settings file. Run this every time you want your settings to be updated. | |
 | `gamma [brightness=1]` | Sets the game's gamma. Useful for testing. 0 is "Moody" and 1 is "Bright", and you can go beyond to enable fullbright. | `@gamma 1000` |
 | `status` | Prints the status of the currently executing command. Mostly useful when running through `/msg`. | |
+| `build [file.schem] [rotation] [mode]` | Build a schematic. Rotation: `0/90/180/270`. Mode: `auto` (detect), `elevated` (scaffold up), `underground` (excavate first), `surface` (normal). | `@build house.schem` `@build castle.schem 90 underground` `@build tower.schem 0 elevated` |
 | `stop` | Forcefully stops the currently running command. The shortcut `CTRL+K` also achieves this. | |
 | `test [testname=<run idle test>]` | Runs a "test" command. These vary, and will be described below. | |
 
