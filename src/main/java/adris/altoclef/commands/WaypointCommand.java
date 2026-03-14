@@ -3,10 +3,8 @@ package adris.altoclef.commands;
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.commandsystem.*;
-import adris.altoclef.tasks.movement.GetToXZTask;
-import adris.altoclef.tasks.movement.GetToXZTask;
-import adris.altoclef.tasks.movement.GotoTask;
-import adris.altoclef.util.Utils;
+import adris.altoclef.tasks.movement.GetToBlockTask;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
 public class WaypointCommand extends Command {
@@ -40,8 +38,8 @@ public class WaypointCommand extends Command {
                     Debug.logError("Usage: @waypoint save <name>");
                     return;
                 }
-                if (!Utils.isValidName(name)) {
-                    Debug.logError("Invalid waypoint name: " + name + ". Use alphanumeric characters, periods, underscores, and spaces only.");
+                if (name.isEmpty()) {
+                    Debug.logError("Waypoint name cannot be empty.");
                     return;
                 }
                 mod.getWaypointManager().saveWaypoint(mod, name);
@@ -60,7 +58,7 @@ public class WaypointCommand extends Command {
                     return;
                 }
                 Debug.logMessage("Going to waypoint: " + name + " at " + waypointPos.x + ", " + waypointPos.y + ", " + waypointPos.z);
-                mod.runUserTask(new GotoTask(waypointPos));
+                mod.runUserTask(new GetToBlockTask(new BlockPos(waypointPos.x, waypointPos.y, waypointPos.z)));
                 break;
                 
             case "list":
