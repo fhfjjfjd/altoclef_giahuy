@@ -38,7 +38,7 @@ public class AutoTradeCommand extends Command {
         }
 
         // Try to get the item target
-        ItemTarget itemTarget = TaskCatalogue.getItemTarget(itemStr);
+        ItemTarget itemTarget = TaskCatalogue.getItemTarget(itemStr, count);
         if (itemTarget == null) {
             Debug.logError("Unknown item: " + itemStr);
             return;

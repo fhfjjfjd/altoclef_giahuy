@@ -203,7 +203,7 @@ public class AutoVillagerTradeTask extends Task {
                                 TradeOffer trade = trades.get(i);
                                 if (trade != null) {
                                     // Check if the result of this trade matches our target
-                                    if (trade.getOutput().isOf(_targetItem.getMatches())) {
+                                    if (_targetItem.matches(trade.getOutput().getItem())) {
                                         return true;
                                     }
                                 }

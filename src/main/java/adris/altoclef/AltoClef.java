@@ -201,7 +201,7 @@ public class AltoClef implements ModInitializer {
 
         // Check for low durability items and craft replacements if needed
         // Only do this when not currently running a user task
-        if (!_taskRunner.isActive() && getCombatManager().shouldCraftItemsForDurability(this)) {
+        if (_taskRunner.getCurrentTaskChain() == null && getCombatManager().shouldCraftItemsForDurability(this)) {
             // Get the durability crafting task and run it if available
             adris.altoclef.tasksystem.Task durabilityTask = getCombatManager().getDurabilityCraftingTask(this);
             if (durabilityTask != null) {

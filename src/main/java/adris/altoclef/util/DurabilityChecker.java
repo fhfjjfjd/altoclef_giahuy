@@ -102,8 +102,7 @@ public class DurabilityChecker {
         
         if (mod.getPlayer() == null) return itemsToCraft;
 
-        ItemStack[] armorItems = mod.getPlayer().getArmorItems().toArray(new ItemStack[0]);
-        for (ItemStack armorStack : armorItems) {
+        for (ItemStack armorStack : mod.getPlayer().getArmorItems()) {
             if (needsRepair(armorStack)) {
                 Item currentItem = armorStack.getItem();
                 

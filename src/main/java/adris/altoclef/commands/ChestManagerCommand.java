@@ -13,8 +13,11 @@ public class ChestManagerCommand extends Command {
 
     @Override
     protected void call(AltoClef mod, ArgParser parser) throws CommandException {
-        // Get all remaining arguments as categories
-        String[] categories = parser.getRemainingArgs(String.class);
+        String categoryStr = "";
+        try {
+            categoryStr = parser.get(String.class);
+        } catch (CommandException ignored) {}
+        String[] categories = categoryStr.isEmpty() ? new String[0] : categoryStr.split(",");
         
         if (categories.length == 0) {
             // No categories specified, sort all items

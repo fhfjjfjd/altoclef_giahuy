@@ -71,7 +71,7 @@ public class UndoBuildTask extends Task {
         
         BlockState originalState = buildOp._originalBlocks.get(currentPos);
         BlockState currentState = mod.getWorld().getBlockState(currentPos);
-        BlockState targetState = (originalState != null) ? originalState : mod.getWorld().getRegistryManager().getCombinedDynamicRegistries().get(0).get(net.minecraft.util.registry.Registry.BLOCK_KEY).getEntry(0).map(e -> e.value().getDefaultState()).orElse(net.minecraft.block.Blocks.AIR.getDefaultState());
+        BlockState targetState = (originalState != null) ? originalState : net.minecraft.block.Blocks.AIR.getDefaultState();
         
         // If the current block doesn't match what was built, skip it
         BlockState builtState = buildOp._builtBlocks.get(currentPos);

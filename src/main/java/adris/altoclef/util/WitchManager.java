@@ -24,10 +24,10 @@ public class WitchManager {
      */
     public static void tick(AltoClef mod) {
         // Check for nearby witches and their casting state
-        List<Entity> witches = mod.getEntityTracker().getTrackedEntities(WitchEntity.class);
+        List<WitchEntity> witches = mod.getEntityTracker().getTrackedEntities(WitchEntity.class);
         
-        for (Entity entity : witches) {
-            if (entity instanceof WitchEntity witch && entity.isAlive()) {
+        for (WitchEntity witch : witches) {
+            if (witch.isAlive()) {
                 if (isWitchCastingPotion(witch)) {
                     // Witch is casting a potion, take evasive action
                     mod.log("Witch is casting potion, taking evasive action!");
@@ -38,9 +38,9 @@ public class WitchManager {
         }
 
         // Also check for nearby potion entities that are incoming
-        List<Entity> potions = mod.getEntityTracker().getTrackedEntities(PotionEntity.class);
-        for (Entity entity : potions) {
-            if (entity instanceof PotionEntity potion && entity.isAlive()) {
+        List<PotionEntity> potions = mod.getEntityTracker().getTrackedEntities(PotionEntity.class);
+        for (PotionEntity potion : potions) {
+            if (potion.isAlive()) {
                 if (isPotionTargetingPlayer(mod, potion)) {
                     mod.log("Incoming potion detected, dodging!");
                     dodgePotion(mod, potion);
@@ -124,12 +124,12 @@ public class WitchManager {
      * Check if there are witches nearby that might pose a threat.
      */
     public static boolean areWitchesNearby(AltoClef mod) {
-        List<Entity> witches = mod.getEntityTracker().getTrackedEntities(WitchEntity.class);
+        List<WitchEntity> witches = mod.getEntityTracker().getTrackedEntities(WitchEntity.class);
         Vec3d playerPos = mod.getPlayer().getPos();
         
-        for (Entity entity : witches) {
-            if (entity instanceof WitchEntity witch && entity.isAlive()) {
-                if (playerPos.distanceTo(entity.getPos()) < WITCH_CASTING_DISTANCE) {
+        for (WitchEntity witch : witches) {
+            if (witch.isAlive()) {
+                if (playerPos.distanceTo(witch.getPos()) < WITCH_CASTING_DISTANCE) {
                     return true;
                 }
             }

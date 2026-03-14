@@ -202,7 +202,7 @@ public class AutoMineOreTask extends Task {
      * Check if a block position contains an ore block.
      */
     private boolean isOreBlock(AltoClef mod, BlockPos pos) {
-        if (!WorldHelper.isChunkLoaded(mod, pos)) {
+        if (mod.getWorld() == null) {
             return false;
         }
         
@@ -219,7 +219,7 @@ public class AutoMineOreTask extends Task {
      * Check if a block is valid to mine (exists, not air, not already mined, etc.).
      */
     private boolean isBlockValidToMine(AltoClef mod, BlockPos pos) {
-        if (!WorldHelper.isChunkLoaded(mod, pos)) {
+        if (mod.getWorld() == null) {
             return false;
         }
         

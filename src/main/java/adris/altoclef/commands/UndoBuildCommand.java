@@ -4,6 +4,7 @@ import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.commandsystem.*;
 import adris.altoclef.tasks.misc.UndoBuildTask;
+import adris.altoclef.util.BuildHistory;
 
 public class UndoBuildCommand extends Command {
     public UndoBuildCommand() throws CommandException {

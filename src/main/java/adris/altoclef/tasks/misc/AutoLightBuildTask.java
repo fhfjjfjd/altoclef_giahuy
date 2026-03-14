@@ -56,14 +56,12 @@ public class AutoLightBuildTask extends Task {
     protected Task onTick(AltoClef mod) {
         // First, run the main build task
         if (!_buildingComplete) {
-            Task buildSubtask = _buildTask.onTick(mod);
-            
             if (_buildTask.isFinished(mod)) {
                 _buildingComplete = true;
                 mod.log("Building complete, now checking for dark areas to light up...");
             } else {
-                // Return the build subtask if we're still building
-                return buildSubtask;
+                // Delegate to the build task
+                return _buildTask;
             }
         }
         
