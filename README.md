@@ -10,7 +10,19 @@ Powered by Baritone. Forked by **Gia Huy**.
 
 ## New Features (compared to original)
 
-### 🏗️ Building
+### ⚔️ Advanced Combat
+- **Auto-Craft/Repair** — Automatically crafts/repairs weapons and armor when durability is low
+- **Witch Potion Dodging** — Dodges harmful potion effects from witches
+- **PvP Mode** — Attack players when attacked first (retaliation mode)
+- **Advanced Combat Manager** — Shield auto-blocking, critical hits, sprint-reset combos, circle strafing
+- **Auto-Equip Weapon** — Automatically equips the best weapon (netherite > diamond > iron, swords + axes ranked by damage)
+- **Smart Retreat** — Bot retreats to heal when HP is critically low
+- **Combat HUD** — Shows combat state (ENGAGING/BLOCKING/RETREATING) + HP bar
+
+### 🏗️ Advanced Builder
+- **Multi-Schematic** — Build multiple files in sequence with `@multi-build <file1.schem> <file2.schem> ...`
+- **Auto-Light** — Place torches automatically when building in dark areas
+- **Undo Last Build** — Undo the last schematic build with `@build-undo`
 - **State Machine Builder** — `SchematicBuildTask` uses a state machine (`BUILDING` → `SOURCING` → `RECOVERING`) instead of messy boolean flags
 - **Schematic Rotation** — Rotate schematics 90°/180°/270° before building with `@build file.schem 90`
 - **Sourcing Hysteresis** — Bot collects ALL required materials before returning to build
@@ -19,6 +31,17 @@ Powered by Baritone. Forked by **Gia Huy**.
 - **Scaffold System** — Auto-builds pillar/bridge scaffolding for elevated (high-altitude) construction
 - **Underground Excavation** — Auto-clears underground area before building, seals lava/water hazards on boundaries
 - **Build Modes** — `AUTO` (detect from Y), `ELEVATED` (force scaffold), `UNDERGROUND` (force excavation), `SURFACE` (normal)
+
+### 🗺️ Navigation
+- **Waypoint System** — `@waypoint save <name>`, `@waypoint go <name>`, `@waypoint remove <name>`, `@waypoint list`
+- **Auto-Explore** — Automatically explore new chunks with `@auto-explore`
+- **Follow Player** — Follow a specific player with `@follow <player>`
+
+### 🌍 World Interaction
+- **Auto-Mine** — Automatically mine ore veins with `@auto-mine <ore> [count]`
+- **Auto-Smelt** — Automatically smelt raw materials with `@auto-smelt <item> [count]`
+- **Auto-Trade** — Trade with villagers automatically with `@auto-trade <item> [count]`
+- **Chest Management** — Automatically sort items into chests with `@chest-manager <mode>`
 
 ### 🌾 Farming
 - **Auto-Farm System** — Fully automatic crop farming with `@auto-farm <crop> <count>`
@@ -29,12 +52,6 @@ Powered by Baritone. Forked by **Gia Huy**.
 - **Nether Wart** — Harvests at age 3, replants on soul sand
 - **Auto Seed Management** — Picks up dropped seeds, acquires new seeds when needed
 - **Farm HUD** — Shows farm state (HARVESTING/REPLANTING/BONE_MEALING/EXPANDING/TILLING/SEARCHING)
-
-### ⚔️ Combat
-- **Advanced Combat Manager** — Shield auto-blocking, critical hits, sprint-reset combos, circle strafing
-- **Auto-Equip Weapon** — Automatically equips the best weapon (netherite > diamond > iron, swords + axes ranked by damage)
-- **Smart Retreat** — Bot retreats to heal when HP is critically low
-- **Combat HUD** — Shows combat state (ENGAGING/BLOCKING/RETREATING) + HP bar
 
 ### 🛡️ Survival
 - **Fall Damage Prevention** — Auto-crouches near edges with ≥ 4 block drops
@@ -83,7 +100,7 @@ The JAR will be in `build/libs/`.
 
 ## Commands
 
-### Building
+### 🏗️ Building
 | Command | Description |
 |---------|-------------|
 | `@build <file.schem>` | Build a schematic at player position |
@@ -91,9 +108,12 @@ The JAR will be in `build/libs/`.
 | `@build <file.schem> [rotation] elevated` | Build with auto-scaffolding (high altitude) |
 | `@build <file.schem> [rotation] underground` | Build with auto-excavation (underground) |
 | `@build <file.schem> [rotation] auto` | Auto-detect build mode from position |
+| `@multi-build <file1.schem> <file2.schem> ...` | Build multiple schematics in sequence |
+| `@auto-light-build <file.schem>` | Build with automatic torch placement |
+| `@build-undo` | Undo the last schematic build |
 | `@autofill <materials...>` | Fill a target chest with specified materials |
 
-### Farming
+### 🌾 Farming
 | Command | Description |
 |---------|-------------|
 | `@auto-farm <crop> [count]` | Auto-farm a crop (default: 100) |
@@ -107,7 +127,7 @@ The JAR will be in `build/libs/`.
 | Nether | `nether_wart` |
 | Tree | `cocoa_beans` |
 
-### Navigation
+### 🗺️ Navigation
 | Command | Description |
 |---------|-------------|
 | `@goto <x> <y> <z>` | Go to coordinates |
@@ -115,17 +135,34 @@ The JAR will be in `build/libs/`.
 | `@roundtrip <x> <y> <z>` | Travel to coordinates and back |
 | `@coords` | Show current coordinates and dimension |
 | `@locate_structure <name>` | Find a structure |
+| `@waypoint save <name>` | Save current position as waypoint |
+| `@waypoint go <name>` | Navigate to saved waypoint |
+| `@waypoint remove <name>` | Delete a waypoint |
+| `@waypoint list` | List all waypoints |
+| `@auto-explore` | Automatically explore new chunks |
 
-### Resources & Combat
+### ⛏️ Resources & Mining
 | Command | Description |
 |---------|-------------|
 | `@get <item> [count]` | Obtain any item |
 | `@list` | List all obtainable items |
 | `@give <player> <item> [count]` | Give item to a player |
+| `@auto-mine <ore> [count]` | Automatically mine ore veins |
+| `@auto-smelt <item> [count]` | Automatically smelt raw materials |
+
+### ⚔️ Combat
+| Command | Description |
+|---------|-------------|
 | `@punk <player>` | Attack a player |
 | `@gamer` | Auto speedrun (kill Ender Dragon) |
+| `@auto-trade <item> [count]` | Auto-trade with villagers |
 
-### System
+### 📦 Chest Management
+| Command | Description |
+|---------|-------------|
+| `@chest-manager <mode>` | Automatically sort items into chests |
+
+### 🔧 System
 | Command | Description |
 |---------|-------------|
 | `@help` | Show all commands grouped by category |
