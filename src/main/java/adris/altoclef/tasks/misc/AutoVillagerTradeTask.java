@@ -199,12 +199,16 @@ public class AutoVillagerTradeTask extends Task {
                         // Check if this villager has trades for our target item
                         if (entity instanceof VillagerEntity villager) {
                             TradeOfferList trades = villager.getOffers();
-                            for (int i = 0; i < trades.size(); i++) {
-                                TradeOffer trade = trades.get(i);
-                                if (trade != null) {
-                                    // Check if the result of this trade matches our target
-                                    if (_targetItem.matches(trade.getOutput().getItem())) {
-                                        return true;
+                            if (trades != null) {
+                                for (int i = 0; i < trades.size(); i++) {
+                                    TradeOffer trade = trades.get(i);
+                                    if (trade != null) {
+                                        // Check if the result of this trade matches our target
+                                        // In Minecraft 1.17.1, use getSellItem() instead of getOutput()
+                                        Item sellItem = trade.getSellItem().getItem();
+                                        if (_targetItem.matches(sellItem)) {
+                                            return true;
+                                        }
                                     }
                                 }
                             }
