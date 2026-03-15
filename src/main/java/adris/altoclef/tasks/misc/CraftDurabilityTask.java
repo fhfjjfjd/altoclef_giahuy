@@ -86,7 +86,7 @@ public class CraftDurabilityTask extends Task {
      */
     public static boolean shouldRepair(ItemStack stack, AltoClef mod) {
         if (!stack.isDamageable()) return false;
-        int threshold = mod.getSettings().getMinDurabilityThreshold();
+        int threshold = mod.getModSettings().getMinDurabilityThreshold();
         int durabilityPercent = getDurabilityPercent(stack);
         return durabilityPercent < threshold;
     }
@@ -96,7 +96,9 @@ public class CraftDurabilityTask extends Task {
      */
     public static List<ItemStack> getDamagedItems(AltoClef mod) {
         List<ItemStack> damaged = new ArrayList<>();
-        for (ItemStack stack : mod.getInventoryTracker().getInventory()) {
+        // Iterate through player inventory slots
+        for (int slot = 0; slot < 36; slot++) {
+            ItemStack stack = mod.getPlayer().getInventory().getStack(slot);
             if (stack != null && stack.isDamageable() && shouldRepair(stack, mod)) {
                 damaged.add(stack);
             }

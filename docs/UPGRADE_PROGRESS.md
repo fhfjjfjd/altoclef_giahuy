@@ -11,6 +11,29 @@
 ### Documentation
 - Created upgrade plan: `docs/upgrade-plan-13-features.md`
 - Updated README with all 13 features list
+- Progress tracker: `docs/UPGRADE_PROGRESS.md`
+
+### Chunk 1: Advanced Combat - Auto-Craft/Repair ✅
+- [x] Settings added
+- [x] Priority system (Netherite > Diamond > Iron)
+  - Sword: 60/50/40/30/20
+  - Pickaxe: 58/48/38
+  - Axe: 56/46/36
+  - Shovel: 54/44/34
+  - Chestplate: 55/45/35
+  - Helmet: 50/40/30
+  - Leggings: 52/42/32
+  - Boots: 48/38/28
+- [x] Utility methods:
+  - `getPriorityScore(Item)` - Get item priority
+  - `getDurabilityPercent(ItemStack)` - Calculate durability %
+  - `shouldRepair(ItemStack, AltoClef)` - Check if needs repair
+  - `getDamagedItems(AltoClef)` - Get all damaged items
+- [x] Unit tests (14 tests covering all scenarios)
+  - Priority ordering tests
+  - Durability calculation tests
+  - Edge case tests
+- [x] Workflow: https://github.com/fhfjjfjd/altoclef_giahuy/actions/runs/23107343357
 
 ---
 
