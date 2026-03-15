@@ -587,6 +587,118 @@ public class Settings {
         return false;
     }
 
+    // === COMBAT SETTINGS ===
+    
+    /**
+     * Minimum durability % to auto-repair (0-100)
+     */
+    private int minDurabilityThreshold = 30;
+
+    /**
+     * Auto-craft replacement when durability < 10%
+     */
+    private boolean autoCraftReplacement = true;
+
+    /**
+     * PvP Mode: OFF, DEFENSIVE (retaliate), AGGRESSIVE (attack on sight)
+     */
+    private String pvpMode = "DEFENSIVE";
+
+    /**
+     * Ignore players in creative/spectator mode
+     */
+    private boolean ignoreNonSurvival = true;
+
+    /**
+     * Auto-eat food when HP < 50% during PvP
+     */
+    private boolean autoEatDuringPvp = true;
+
+    // === BUILD SETTINGS ===
+
+    /**
+     * Auto-place torches when building in dark areas
+     */
+    private boolean autoLightBuild = true;
+
+    /**
+     * Maximum undo history size
+     */
+    private int maxUndoHistory = 5;
+
+    // === NAVIGATION SETTINGS ===
+
+    /**
+     * Auto-explore chunk render distance
+     */
+    private int autoExploreRenderDistance = 4;
+
+    // === GETTERS AND SETTERS ===
+
+    public int getMinDurabilityThreshold() {
+        return minDurabilityThreshold;
+    }
+
+    public void setMinDurabilityThreshold(int minDurabilityThreshold) {
+        this.minDurabilityThreshold = minDurabilityThreshold;
+    }
+
+    public boolean isAutoCraftReplacement() {
+        return autoCraftReplacement;
+    }
+
+    public void setAutoCraftReplacement(boolean autoCraftReplacement) {
+        this.autoCraftReplacement = autoCraftReplacement;
+    }
+
+    public String getPvpMode() {
+        return pvpMode;
+    }
+
+    public void setPvpMode(String pvpMode) {
+        this.pvpMode = pvpMode;
+    }
+
+    public boolean isIgnoreNonSurvival() {
+        return ignoreNonSurvival;
+    }
+
+    public void setIgnoreNonSurvival(boolean ignoreNonSurvival) {
+        this.ignoreNonSurvival = ignoreNonSurvival;
+    }
+
+    public boolean isAutoEatDuringPvp() {
+        return autoEatDuringPvp;
+    }
+
+    public void setAutoEatDuringPvp(boolean autoEatDuringPvp) {
+        this.autoEatDuringPvp = autoEatDuringPvp;
+    }
+
+    public boolean isAutoLightBuild() {
+        return autoLightBuild;
+    }
+
+    public void setAutoLightBuild(boolean autoLightBuild) {
+        this.autoLightBuild = autoLightBuild;
+    }
+
+    public int getMaxUndoHistory() {
+        return maxUndoHistory;
+    }
+
+    public void setMaxUndoHistory(int maxUndoHistory) {
+        this.maxUndoHistory = maxUndoHistory;
+    }
+
+    public int getAutoExploreRenderDistance() {
+        return autoExploreRenderDistance;
+    }
+
+    public void setAutoExploreRenderDistance(int autoExploreRenderDistance) {
+        this.autoExploreRenderDistance = autoExploreRenderDistance;
+    }
+
     public DefaultGoToDimensionTask.OVERWORLD_TO_NETHER_BEHAVIOUR getOverworldToNetherBehaviour() {
         return overworldToNetherBehaviour;
     }
