@@ -55,12 +55,6 @@ public class PotionEffectTracker {
             Potions.SLOWNESS,
             Potions.LONG_SLOWNESS
         ));
-        
-        // Blindness (rare but dangerous in combat)
-        DANGEROUS_EFFECTS.put(StatusEffects.BLINDNESS, Arrays.asList(
-            Potions.BLINDNESS,
-            Potions.LONG_BLINDNESS
-        ));
     }
     
     /**
@@ -71,7 +65,6 @@ public class PotionEffectTracker {
         THREAT_LEVELS.put(StatusEffects.POISON, 8);
         THREAT_LEVELS.put(StatusEffects.WEAKNESS, 5);
         THREAT_LEVELS.put(StatusEffects.SLOWNESS, 6);
-        THREAT_LEVELS.put(StatusEffects.BLINDNESS, 7);
     }
     
     /**
