@@ -32,7 +32,7 @@ public class AutoVillagerTradeTask extends Task {
     public AutoVillagerTradeTask(ItemTarget targetItem, int targetCount) {
         _targetItem = targetItem;
         _targetCount = targetCount;
-        _tradeTask = new PerformTradeWithVillager();
+        _tradeTask = new PerformTradeWithVillager(targetItem);
     }
 
     @Override
@@ -104,9 +104,11 @@ public class AutoVillagerTradeTask extends Task {
         private final HashSet<Entity> _blacklisted = new HashSet<>();
         private Entity _currentlyTrading = null;
         private int _lastTradeCount = 0;
+        private final ItemTarget _targetItem;
 
-        public PerformTradeWithVillager() {
+        public PerformTradeWithVillager(ItemTarget targetItem) {
             super(3); // 3 block distance
+            _targetItem = targetItem;
         }
 
         @Override
