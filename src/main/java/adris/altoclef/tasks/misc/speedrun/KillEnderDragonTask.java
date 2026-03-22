@@ -33,6 +33,7 @@ import net.minecraft.entity.boss.dragon.phase.Phase;
 import net.minecraft.entity.boss.dragon.phase.PhaseType;
 import net.minecraft.entity.decoration.EndCrystalEntity;
 import net.minecraft.entity.mob.EndermanEntity;
+import net.minecraft.entity.projectile.DragonFireballEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.util.Hand;
@@ -207,11 +208,15 @@ public class KillEnderDragonTask extends Task {
         private final TimerGame _hitHoldTimer = new TimerGame(0.1);
         private final TimerGame _hitResetTimer = new TimerGame(2);
         private final TimerGame _randomWanderChangeTimeout = new TimerGame(20);
+        private final TimerGame _bowCooldown = new TimerGame(1.5);
+        private final TimerGame _fireballCheckTimer = new TimerGame(0.25);
         private Mode _mode = Mode.WAITING_FOR_PERCH;
 
         private BlockPos _randomWanderPos;
         private boolean _wasHitting;
         private boolean _wasReleased;
+        private boolean _isBowDrawing;
+        private final TimerGame _bowDrawTimer = new TimerGame(1.0);
 
         private PunkEnderDragonTask() {
         }
@@ -229,28 +234,22 @@ public class KillEnderDragonTask extends Task {
                 _hitResetTimer.reset();
                 Debug.logInternal("HIT");
                 mod.getInputControls().tryPress(Input.CLICK_LEFT);
-                //mod.getPlayer().swingHand(Hand.MAIN_HAND);
             }
             if (_hitHoldTimer.elapsed()) {
                 if (!_wasReleased) {
                     Debug.logInternal("    up");
-                    //mod.getControllerExtras().mouseClickOverride(0, false);
                     _wasReleased = true;
                 }
             }
             if (_wasHitting && _hitResetTimer.elapsed() || mod.getPlayer().getAttackCooldownProgress(0) > 0.99) {
                 _wasHitting = false;
-                // Code duplication maybe?
-                //mod.getControllerExtras().mouseClickOverride(0, false);
                 mod.getExtraBaritoneSettings().setInteractionPaused(false);
             }
         }
 
         private void stopHitting(AltoClef mod) {
             if (_wasHitting) {
-                //MinecraftClient.getInstance().options.keyAttack.setPressed(false);
                 if (!_wasReleased) {
-                    //mod.getControllerExtras().mouseClickOverride(0, false);
                     mod.getExtraBaritoneSettings().setInteractionPaused(false);
                     _wasReleased = true;
                 }
@@ -258,6 +257,67 @@ public class KillEnderDragonTask extends Task {
             }
         }
 
+        private boolean shouldEat(AltoClef mod) {
+            return mod.getPlayer().getHealth() < 10 || mod.getPlayer().getHungerManager().getFoodLevel() < 8;
+        }
+
+        private boolean tryShootBow(AltoClef mod, EnderDragonEntity dragon) {
+            if (!mod.getInventoryTracker().hasItem(Items.BOW) || !mod.getInventoryTracker().hasItem(Items.ARROW)) {
+                return false;
+            }
+            if (!_bowCooldown.elapsed()) {
+                return false;
+            }
+
+            Vec3d dragonPos = dragon.getPos();
+            double dist = dragonPos.distanceTo(mod.getPlayer().getPos());
+            if (dist > 64 || dist < 10) {
+                return false;
+            }
+
+            mod.getSlotHandler().forceEquipItem(Items.BOW);
+
+            Vec3d leadPos = dragonPos.add(dragon.getVelocity().multiply(dist / 3.0));
+            leadPos = leadPos.add(0, 2, 0);
+            Rotation targetRotation = RotationUtils.calcRotationFromVec3d(
+                    mod.getClientBaritone().getPlayerContext().playerHead(),
+                    leadPos,
+                    mod.getClientBaritone().getPlayerContext().playerRotations()
+            );
+            mod.getClientBaritone().getLookBehavior().updateTarget(targetRotation, true);
+
+            if (!_isBowDrawing) {
+                _isBowDrawing = true;
+                _bowDrawTimer.reset();
+                mod.getInputControls().hold(Input.CLICK_RIGHT);
+            }
+
+            if (_bowDrawTimer.elapsed()) {
+                mod.getInputControls().release(Input.CLICK_RIGHT);
+                _isBowDrawing = false;
+                _bowCooldown.reset();
+                Debug.logInternal("Shot arrow at dragon (dist=" + (int) dist + ")");
+            }
+            return true;
+        }
+
+        private void stopBow(AltoClef mod) {
+            if (_isBowDrawing) {
+                mod.getInputControls().release(Input.CLICK_RIGHT);
+                _isBowDrawing = false;
+            }
+        }
+
+        private boolean shouldDodgeFireball(AltoClef mod) {
+            if (!_fireballCheckTimer.elapsed()) return false;
+            _fireballCheckTimer.reset();
+            for (DragonFireballEntity fireball : mod.getEntityTracker().getTrackedEntities(DragonFireballEntity.class)) {
+                if (fireball.isInRange(mod.getPlayer(), 15)) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         @Override
         protected void onStart(AltoClef mod) {
@@ -275,13 +335,34 @@ public class KillEnderDragonTask extends Task {
             }
             EnderDragonEntity dragon = mod.getEntityTracker().getTrackedEntities(EnderDragonEntity.class).get(0);
 
+            // Eat food when health/hunger is low
+            if (shouldEat(mod) && mod.getInventoryTracker().totalFoodScore() > 0) {
+                setDebugState("Eating to recover (HP=" + (int) mod.getPlayer().getHealth() + ")");
+                return null;
+            }
+
+            // Dodge incoming fireballs
+            if (shouldDodgeFireball(mod)) {
+                stopHitting(mod);
+                stopBow(mod);
+                BlockPos safePos = getRandomWanderPos(mod);
+                if (safePos != null) {
+                    mod.getClientBaritone().getCustomGoalProcess().onLostControl();
+                    mod.getClientBaritone().getCustomGoalProcess().setGoalAndPath(
+                            new GoalAnd(new AvoidDragonFireGoal(), new GoalGetToBlock(safePos))
+                    );
+                    setDebugState("Dodging dragon fireball!");
+                    return null;
+                }
+            }
+
             Phase dragonPhase = dragon.getPhaseManager().getCurrent();
-            //Debug.logInternal("PHASE: " + dragonPhase);
 
             boolean perchingOrGettingReady = dragonPhase.getType() == PhaseType.LANDING || dragonPhase.isSittingOrHovering();
 
             switch (_mode) {
                 case RAILING -> {
+                    stopBow(mod);
                     if (!perchingOrGettingReady) {
                         Debug.logMessage("Dragon no longer perching.");
                         mod.getClientBaritone().getCustomGoalProcess().onLostControl();
@@ -289,32 +370,28 @@ public class KillEnderDragonTask extends Task {
                         break;
                     }
 
-                    //DamageSource.DRAGON_BREATH
                     Entity head = dragon.head;
-                    // Go for the head
                     if (head.isInRange(mod.getPlayer(), 7.5) && dragon.ticksSinceDeath <= 1) {
-                        // Equip weapon
                         AbstractKillEntityTask.equipWeapon(mod);
-                        // Look torwards da dragon
                         Vec3d targetLookPos = head.getPos().add(0, 3, 0);
                         Rotation targetRotation = RotationUtils.calcRotationFromVec3d(mod.getClientBaritone().getPlayerContext().playerHead(), targetLookPos, mod.getClientBaritone().getPlayerContext().playerRotations());
                         mod.getClientBaritone().getLookBehavior().updateTarget(targetRotation, true);
-                        // Also look towards da dragon
                         MinecraftClient.getInstance().options.autoJump = false;
+                        // Sprint for extra damage
+                        mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.SPRINT, true);
                         mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.MOVE_FORWARD, true);
                         hit(mod);
                     } else {
                         stopHitting(mod);
+                        mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.SPRINT, false);
                     }
                     if (!mod.getClientBaritone().getCustomGoalProcess().isActive()) {
-                        // Set goal to closest block within the pillar that's by the head.
                         if (_exitPortalTop != null) {
                             int bottomYDelta = -3;
                             BlockPos closest = null;
                             double closestDist = Double.POSITIVE_INFINITY;
                             for (int dx = -2; dx <= 2; ++dx) {
                                 for (int dz = -2; dz <= 2; ++dz) {
-                                    // We have sort of a rounded circle here.
                                     if (Math.abs(dx) == 2 && Math.abs(dz) == 2) continue;
                                     BlockPos toCheck = _exitPortalTop.add(dx, bottomYDelta, dz);
                                     double distSq = toCheck.getSquaredDistance(head.getPos(), false);
@@ -331,24 +408,54 @@ public class KillEnderDragonTask extends Task {
                             }
                         }
                     }
-                    setDebugState("Railing on dragon");
+                    setDebugState("Railing on dragon (HP=" + (int) dragon.getHealth() + ")");
                 }
                 case WAITING_FOR_PERCH -> {
                     stopHitting(mod);
                     if (perchingOrGettingReady) {
-                        // We're perching!!
+                        stopBow(mod);
                         mod.getClientBaritone().getCustomGoalProcess().onLostControl();
-                        Debug.logMessage("Dragon perching detected. Dabar duosiu į snuki.");
+                        Debug.logMessage("Dragon perching detected!");
                         _mode = Mode.RAILING;
                         break;
                     }
-                    // Run around aimlessly, dodging dragon fire
+
+                    // Shoot bow at dragon while waiting
+                    if (tryShootBow(mod, dragon)) {
+                        setDebugState("Shooting dragon with bow (HP=" + (int) dragon.getHealth() + ")");
+                        // Stay near portal center for quick access when dragon perches
+                        if (_exitPortalTop != null && !mod.getPlayer().getBlockPos().isWithinDistance(_exitPortalTop, 15)) {
+                            if (!mod.getClientBaritone().getCustomGoalProcess().isActive()) {
+                                mod.getClientBaritone().getCustomGoalProcess().setGoalAndPath(
+                                        new GoalAnd(new AvoidDragonFireGoal(), new GoalGetToBlock(_exitPortalTop.add(5, -3, 0)))
+                                );
+                            }
+                        }
+                        return null;
+                    }
+
+                    // Stay near portal center while waiting
+                    if (_exitPortalTop != null) {
+                        double distToPortal = mod.getPlayer().getPos().distanceTo(new Vec3d(_exitPortalTop.getX(), _exitPortalTop.getY() - 3, _exitPortalTop.getZ()));
+                        if (distToPortal > 20) {
+                            _randomWanderPos = null;
+                            if (!mod.getClientBaritone().getCustomGoalProcess().isActive()) {
+                                BlockPos nearPortal = _exitPortalTop.add((int) (Math.random() * 10 - 5), -3, (int) (Math.random() * 10 - 5));
+                                mod.getClientBaritone().getCustomGoalProcess().setGoalAndPath(
+                                        new GoalAnd(new AvoidDragonFireGoal(), new GoalGetToBlock(nearPortal))
+                                );
+                            }
+                            setDebugState("Moving near portal (waiting for perch)");
+                            return null;
+                        }
+                    }
+
+                    // Wander near portal while dodging breath
                     if (_randomWanderPos != null && mod.getPlayer().getBlockPos().isWithinDistance(_randomWanderPos, 2)) {
                         _randomWanderPos = null;
                     }
                     if (_randomWanderPos != null && _randomWanderChangeTimeout.elapsed()) {
                         _randomWanderPos = null;
-                        Debug.logMessage("Reset wander pos after timeout, oof");
                     }
                     if (_randomWanderPos == null) {
                         _randomWanderPos = getRandomWanderPos(mod);
@@ -360,7 +467,7 @@ public class KillEnderDragonTask extends Task {
                                 new GoalAnd(new AvoidDragonFireGoal(), new GoalGetToBlock(_randomWanderPos))
                         );
                     }
-                    setDebugState("Waiting for perch");
+                    setDebugState("Waiting for perch (HP=" + (int) dragon.getHealth() + ")");
                 }
             }
             return null;
@@ -370,7 +477,8 @@ public class KillEnderDragonTask extends Task {
         protected void onStop(AltoClef mod, Task interruptTask) {
             mod.getClientBaritone().getCustomGoalProcess().onLostControl();
             mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.MOVE_FORWARD, false);
-            //mod.getControllerExtras().mouseClickOverride(0, false);
+            mod.getClientBaritone().getInputOverrideHandler().setInputForceState(Input.SPRINT, false);
+            stopBow(mod);
             mod.getExtraBaritoneSettings().setInteractionPaused(false);
         }
 
@@ -381,12 +489,12 @@ public class KillEnderDragonTask extends Task {
 
         @Override
         protected String toDebugString() {
-            return "Punking the dragon";
+            return "Punking the dragon (smart)";
         }
 
         private BlockPos getRandomWanderPos(AltoClef mod) {
-            double RADIUS_RANGE = 45;
-            double MIN_RADIUS = 7;
+            double RADIUS_RANGE = 20;
+            double MIN_RADIUS = 5;
             BlockPos pos = null;
             int allowed = 5000;
 
@@ -403,7 +511,6 @@ public class KillEnderDragonTask extends Task {
                 if (y == -1) continue;
                 BlockPos check = new BlockPos(x, y, z);
                 if (mod.getWorld().getBlockState(check).getBlock() == Blocks.END_STONE) {
-                    // We found a spot!
                     pos = check.up();
                 }
             }
@@ -413,7 +520,7 @@ public class KillEnderDragonTask extends Task {
 
         private void updateBreathCostMap(AltoClef mod) {
             _breathCostMap.clear();
-            double radius = 4;
+            double radius = 5;
             for (AreaEffectCloudEntity cloud : mod.getEntityTracker().getTrackedEntities(AreaEffectCloudEntity.class)) {
                 Vec3d c = cloud.getPos();
                 for (int x = (int) (c.getX() - radius); x <= (int) (c.getX() + radius); ++x) {
@@ -421,11 +528,22 @@ public class KillEnderDragonTask extends Task {
                         BlockPos p = new BlockPos(x, cloud.getBlockPos().getY(), z);
                         double sqDist = p.getSquaredDistance(c, false);
                         if (sqDist < radius) {
-                            double cost = 1000.0 / (sqDist + 1);
+                            double cost = 1500.0 / (sqDist + 1);
                             _breathCostMap.put(p, cost);
                             _breathCostMap.put(p.up(), cost);
                             _breathCostMap.put(p.down(), cost);
                         }
+                    }
+                }
+            }
+            // Also avoid dragon fireball impact zones
+            for (DragonFireballEntity fireball : mod.getEntityTracker().getTrackedEntities(DragonFireballEntity.class)) {
+                BlockPos fp = fireball.getBlockPos();
+                for (int dx = -3; dx <= 3; ++dx) {
+                    for (int dz = -3; dz <= 3; ++dz) {
+                        BlockPos p = fp.add(dx, 0, dz);
+                        _breathCostMap.put(p, 2000.0);
+                        _breathCostMap.put(p.up(), 2000.0);
                     }
                 }
             }
