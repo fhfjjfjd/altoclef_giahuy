@@ -41,7 +41,16 @@ public class AltoClefCommands {
                 new ChestManagerCommand(),
                 new FillTargetChestCommand(),
                 new InfoCommand(),
-                new AutoFarmCommand()
+                new AutoFarmCommand(),
+                new AutoFishCommand(),
+                new AutoShelterCommand(),
+                new AutoBreedCommand(),
+                new AutoEnchantCommand(),
+                new AutoShieldCommand(),
+                new AutoHarvestCommand(),
+                new AlertCommand(),
+                new AutoBridgeCommand(),
+                new AutoTrashCommand()
                 //new TestMoveInventoryCommand(),
                 //    new TestSwapInventoryCommand()
         );
