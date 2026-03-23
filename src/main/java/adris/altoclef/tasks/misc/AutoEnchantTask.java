@@ -27,6 +27,8 @@ public class AutoEnchantTask extends Task {
     private static final int REQUIRED_OBSIDIAN = 4;
     private static final int REQUIRED_DIAMONDS = 2;
     private static final int REQUIRED_BOOKS = 1;
+    private static final int BOOKSHELVES_FOR_MAX = 15;
+    private static final int MIN_XP_LEVEL = 30;
 
     private final TimeoutWanderTask _wanderTask = new TimeoutWanderTask(10);
     private final TimerGame _interactDelay = new TimerGame(1.0);
@@ -34,7 +36,9 @@ public class AutoEnchantTask extends Task {
 
     private enum EnchantState {
         FIND_TABLE,
+        CHECK_BOOKSHELVES,
         COLLECT_LAPIS,
+        WAIT_XP,
         ENCHANT
     }
 
@@ -42,6 +46,7 @@ public class AutoEnchantTask extends Task {
     private BlockPos _tablePos = null;
     private boolean _needsCrafting = false;
     private boolean _enchantAttempted = false;
+    private int _enchantCount = 0;
 
     @Override
     protected void onStart(AltoClef mod) {
@@ -60,8 +65,12 @@ public class AutoEnchantTask extends Task {
         switch (_state) {
             case FIND_TABLE:
                 return handleFindTable(mod);
+            case CHECK_BOOKSHELVES:
+                return handleCheckBookshelves(mod);
             case COLLECT_LAPIS:
                 return handleCollectLapis(mod);
+            case WAIT_XP:
+                return handleWaitXP(mod);
             case ENCHANT:
                 return handleEnchant(mod);
         }
@@ -113,7 +122,38 @@ public class AutoEnchantTask extends Task {
             return new GetToBlockTask(_tablePos);
         }
 
-        // We're close to the table, move to lapis collection
+        // We're close to the table, check bookshelves
+        _state = EnchantState.CHECK_BOOKSHELVES;
+        return null;
+    }
+
+    private Task handleCheckBookshelves(AltoClef mod) {
+        if (_tablePos == null) {
+            _state = EnchantState.FIND_TABLE;
+            return null;
+        }
+
+        // Count bookshelves within 2 blocks of the enchanting table
+        int bookshelfCount = 0;
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dy = 0; dy <= 1; dy++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    if (dx == 0 && dz == 0) continue;
+                    BlockPos checkPos = _tablePos.add(dx, dy, dz);
+                    if (mod.getWorld().getBlockState(checkPos).getBlock() == Blocks.BOOKSHELF) {
+                        bookshelfCount++;
+                    }
+                }
+            }
+        }
+
+        if (bookshelfCount < BOOKSHELVES_FOR_MAX) {
+            mod.log("Found " + bookshelfCount + "/" + BOOKSHELVES_FOR_MAX + " bookshelves. Enchantment may not be max level.");
+        } else {
+            mod.log("Found " + bookshelfCount + " bookshelves. Max level enchantments available!");
+        }
+
+        setDebugState("Bookshelves: " + bookshelfCount + "/" + BOOKSHELVES_FOR_MAX);
         _state = EnchantState.COLLECT_LAPIS;
         return null;
     }
@@ -151,12 +191,24 @@ public class AutoEnchantTask extends Task {
             mod.log("Cannot obtain lapis lazuli, attempting to enchant with what we have.");
         }
 
+        _state = EnchantState.WAIT_XP;
+        return null;
+    }
+
+    private Task handleWaitXP(AltoClef mod) {
+        int xpLevel = mod.getPlayer().experienceLevel;
+        if (xpLevel < MIN_XP_LEVEL) {
+            setDebugState("Waiting for XP (level " + xpLevel + "/" + MIN_XP_LEVEL + ")");
+            mod.log("Need XP level " + MIN_XP_LEVEL + " for best enchants (current: " + xpLevel + ")");
+            return null;
+        }
         _state = EnchantState.ENCHANT;
         return null;
     }
 
     private Task handleEnchant(AltoClef mod) {
-        setDebugState("Enchanting...");
+        int xpLevel = mod.getPlayer().experienceLevel;
+        setDebugState("Enchanting... (XP=" + xpLevel + ", enchanted=" + _enchantCount + ")");
 
         if (_tablePos == null) {
             _tablePos = mod.getBlockTracker().getNearestTracking(Blocks.ENCHANTING_TABLE);
@@ -179,8 +231,9 @@ public class AutoEnchantTask extends Task {
             if (_enchantDelay.elapsed()) {
                 mod.getInputControls().tryPress(Input.CLICK_LEFT);
                 _enchantAttempted = true;
+                _enchantCount++;
                 _enchantDelay.reset();
-                mod.log("Attempted enchantment!");
+                mod.log("Enchantment #" + _enchantCount + " attempted!");
             }
             return null;
         }

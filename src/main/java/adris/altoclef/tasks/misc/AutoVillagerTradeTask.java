@@ -105,7 +105,6 @@ public class AutoVillagerTradeTask extends Task {
         private final ItemTarget _targetItem;
         private Entity _currentlyTrading = null;
         private int _lastTradeCount = 0;
-        private final ItemTarget _targetItem;
 
         public PerformTradeWithVillager(ItemTarget targetItem) {
             super(3); // 3 block distance
