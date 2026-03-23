@@ -102,6 +102,7 @@ public class AutoVillagerTradeTask extends Task {
         private final TimerGame _tradeTimeout = new TimerGame(5); // 5 seconds to trade
         private final TimerGame _intervalTimeout = new TimerGame(10); // 10 seconds between trades
         private final HashSet<Entity> _blacklisted = new HashSet<>();
+        private final ItemTarget _targetItem;
         private Entity _currentlyTrading = null;
         private int _lastTradeCount = 0;
         private final ItemTarget _targetItem;
