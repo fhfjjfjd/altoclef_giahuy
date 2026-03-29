@@ -55,6 +55,9 @@ dependencies {
     include files('libs/baritone-unoptimized-fabric-1.7.0-meloweh-beta.1.jar')
     //modImplementation 'baritone-api-fabric:baritone-api-fabric:1.6.3'
     //implementation files('baritone-plus/build/libs/baritone-unoptimized-fabric-1.6.3.jar')
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
 }
 shadowJar {
     configurations = [project.configurations.shadow]
@@ -119,4 +122,9 @@ publishing {
         // uncomment to publish to the local maven
         // mavenLocal()
     }
+}
+
+
+test {
+    useJUnitPlatform()
 }
